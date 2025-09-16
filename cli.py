@@ -24,7 +24,7 @@ BASE_DIR: Path = Path(__file__).resolve().parents[1]
 CSV_PATH: Path = BASE_DIR / "エクスポートされたアイテム.csv"
 CACHE_DIR: Path = BASE_DIR / ".cache"
 OUT_DIR: Path | None = BASE_DIR / "out"   # 保存不要なら None
-TOP_N: int = 100
+TOP_N: int = 200
 MIN_DOCS: int = 1
 SPACY_MODEL: str = "en_core_web_sm"
 

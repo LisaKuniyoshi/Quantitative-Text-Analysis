@@ -26,7 +26,6 @@ def _make_key(texts: Iterable[str], policy: TokenPolicy, backend_id: str) -> str
     h = hashlib.sha256()
     for t in texts:
         h.update((t or "").encode("utf-8"))
-    # ★ ここを to_plain(policy) ではなく _policy_fingerprint に置換
     h.update(json.dumps(_policy_fingerprint(policy), sort_keys=True, separators=(",", ":")).encode("utf-8"))
     h.update(backend_id.encode("utf-8"))
     return h.hexdigest()

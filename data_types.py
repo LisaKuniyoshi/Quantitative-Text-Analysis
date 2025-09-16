@@ -54,7 +54,3 @@ class NLPBackend(Protocol):
 
 # 正規化関数の型
 Normalizer = Callable[[TokenLike], Optional[str]]
-
-# キャッシュ用ユーティリティ
-def to_plain(obj: object) -> Mapping[str, object]:
-    return asdict(obj)  # dataclass 前提

@@ -8,6 +8,8 @@ def default_token_policy() -> TokenPolicy:
     forced = (
         ("autism", "spectrum", "disorder"),
         ("mental", "health"),
+        ("self","-", "reported"),
+        ("non", "-", "autistic"),
     )
 
     return TokenPolicy(
