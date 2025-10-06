@@ -26,4 +26,6 @@ def method_group(tags: Optional[str]) -> Optional[str]:
         return "theoretic"
     if "review" in s:
         return "review"
+    if "other" in s:
+        return "other"
     return None
