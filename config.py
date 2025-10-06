@@ -76,7 +76,8 @@ def default_token_policy() -> TokenPolicy:
         ("internalize", "stigma"),
         ("cognitive", "flexibility"),
 
-
+        ("social", "camouflage"),
+        ("social", "camouflaging"),
     )
 
     return TokenPolicy(
