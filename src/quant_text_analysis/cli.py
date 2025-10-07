@@ -1,23 +1,16 @@
 # quant_text_analysis/cli.py
 from __future__ import annotations
 
-# --- クリック実行対応：親ディレクトリを import 対象に追加 --------------------
-if __name__ == "__main__" and __package__ is None:  # pyright: ignore[reportConstantRedefinition]
-    import sys
-    from pathlib import Path
-    sys.path.append(str(Path(__file__).resolve().parents[1]))
-
 from pathlib import Path
 from typing import List
 
-# 絶対インポート（相対は使わない）
-from quant_text_analysis.config import default_columns, default_token_policy, default_ranking_params
-from quant_text_analysis.io_loader import load_df
-from quant_text_analysis.grouping import period_group_year, method_group
-from quant_text_analysis.nlp_backend import SpacyBackend
-from quant_text_analysis.normalize import build_normalizer
-from quant_text_analysis.frequency import frequency_rankings
-from quant_text_analysis.cache import analyze_with_cache
+from .config import default_columns, default_token_policy, default_ranking_params
+from .io_loader import load_df
+from .grouping import period_group_year, method_group
+from .nlp_backend import SpacyBackend
+from .normalize import build_normalizer
+from .frequency import frequency_rankings
+from .cache import analyze_with_cache
 
 # ---- 固定設定（必要に応じて変更） -------------------------------------------
 BASE_DIR: Path = Path(__file__).resolve().parents[1]
