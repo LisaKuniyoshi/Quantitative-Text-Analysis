@@ -1,0 +1,12 @@
+from __future__ import annotations
+import pandas as pd
+from .data_types import Columns
+
+# pandas の戻り値型はライブラリ側型定義に委ねる
+
+def load_df(csv_path: str, columns: Columns) -> pd.DataFrame:
+    df: pd.DataFrame = pd.read_csv(csv_path)
+    out = df[[columns.abstract, columns.year, columns.manual_tags]].copy()
+    out.columns = ["abstract", "year", "manual_tags"]
+    out["year"] = pd.to_numeric(out["year"], errors="coerce").astype("Int64")
+    return out
