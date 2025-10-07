@@ -12,11 +12,20 @@ from .normalize import build_normalizer
 from .frequency import frequency_rankings
 from .cache import analyze_with_cache
 
-# ---- 固定設定（必要に応じて変更） -------------------------------------------
-BASE_DIR: Path = Path(__file__).resolve().parents[1]
-CSV_PATH: Path = BASE_DIR / "エクスポートされたアイテム.csv"
-CACHE_DIR: Path = BASE_DIR / ".cache"
-OUT_DIR: Path | None = BASE_DIR / "out"   # 保存不要なら None
+# プロジェクトルート: .../（2つ上）
+PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
+
+DATA_DIR: Path = PROJECT_ROOT / "data"
+RAW_DIR: Path = DATA_DIR / "raw"
+CACHE_DIR: Path = DATA_DIR / "cache"
+
+# 入力CSV（例: data/raw/エクスポートされたアイテム.csv）
+CSV_PATH: Path = RAW_DIR / "エクスポートされたアイテム.csv"
+
+# 出力（例: outputs/）
+OUTPUTS_DIR: Path = PROJECT_ROOT / "outputs"
+OUT_DIR: Path | None = OUTPUTS_DIR   # 保存不要なら None に設定
+
 TOP_N: int = 200
 MIN_DOCS: int = 1
 SPACY_MODEL: str = "en_core_web_sm"

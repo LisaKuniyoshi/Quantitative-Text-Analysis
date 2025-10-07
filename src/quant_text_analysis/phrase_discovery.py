@@ -17,10 +17,10 @@ from gensim.parsing.preprocessing import STOPWORDS
 from quant_text_analysis.config import default_columns
 from quant_text_analysis.io_loader import load_df
 
-# ---- 固定設定 ----
-BASE_DIR: Path = Path(__file__).resolve().parents[1]
-CSV_PATH: Path = BASE_DIR / "エクスポートされたアイテム.csv"
-OUT_DIR: Path = BASE_DIR / "out"
+BASE_DIR: Path = Path(__file__).resolve().parents[2]
+
+CSV_PATH: Path = BASE_DIR / "data" / "raw" / "エクスポートされたアイテム.csv"
+OUT_DIR: Path = BASE_DIR / "outputs"
 OUT_FILE: Path = OUT_DIR / "phrases_gensim.csv"
 
 MIN_COUNT_BIGRAM: int = 5
