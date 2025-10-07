@@ -1,0 +1,5 @@
+# python==3.12.10
+pandas~=2.3
+spacy~=3.7
+gensim~=4.3
+breame~=0.1.2
