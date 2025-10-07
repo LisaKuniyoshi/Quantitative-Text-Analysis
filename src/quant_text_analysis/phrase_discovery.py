@@ -1,11 +1,7 @@
 # quant_text_analysis/phrase_discovery.py
 from __future__ import annotations
 
-# --- クリック実行対応：親ディレクトリを import 対象に追加 ---
-if __name__ == "__main__" and __package__ is None:  # pyright: ignore[reportConstantRedefinition]
-    import sys
-    from pathlib import Path
-    sys.path.append(str(Path(__file__).resolve().parents[1]))
+from breame.spelling import get_american_spelling
 
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
@@ -14,8 +10,8 @@ import pandas as pd
 from gensim.models.phrases import Phrases, Phraser, ENGLISH_CONNECTOR_WORDS
 from gensim.parsing.preprocessing import STOPWORDS
 
-from quant_text_analysis.config import default_columns
-from quant_text_analysis.io_loader import load_df
+from .config import default_columns
+from .io_loader import load_df
 
 BASE_DIR: Path = Path(__file__).resolve().parents[2]
 
@@ -34,7 +30,7 @@ TOP_N_PRINT: int = 100
 def simple_tokenize(text: str) -> List[str]:
     import re
     tokens = re.sub(r"[^a-z]+", " ", text.lower()).split()
-    return tokens
+    return [get_american_spelling(tok) for tok in tokens]
 
 def build_corpus(texts: Sequence[str]) -> List[List[str]]:
     return [simple_tokenize(t) for t in texts]
