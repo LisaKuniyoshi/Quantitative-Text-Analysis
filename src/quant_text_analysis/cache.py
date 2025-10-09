@@ -34,13 +34,13 @@ def _make_key(texts: Iterable[str], policy: TokenPolicy, backend_id: str) -> str
 def analyze_with_cache(
     backend: NLPBackend,
     normalizer: Normalizer,
-    texts: Iterable[str],
+    texts: List[str],
     policy: TokenPolicy,
     *,
     cache_dir: Optional[str] = None,
 ) -> Tuple[List[DocResult], List[Dict[str, float]]]:
     if cache_dir is None:
-        return analyze_docs(backend, normalizer, list(texts),policy)
+        return analyze_docs(backend, normalizer, texts,policy)
     os.makedirs(cache_dir, exist_ok=True)
     backend_id = getattr(backend, "model_name", backend.__class__.__name__)
     key = _make_key(texts, policy, str(backend_id))
@@ -48,7 +48,7 @@ def analyze_with_cache(
     if os.path.exists(path):
         with open(path, "rb") as f:
             return pickle.load(f)
-    result = analyze_docs(backend, normalizer, list(texts), policy)
+    result = analyze_docs(backend, normalizer, texts, policy)
     with open(path, "wb") as f:
         pickle.dump(result, f)
     return result

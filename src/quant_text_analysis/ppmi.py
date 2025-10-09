@@ -165,7 +165,7 @@ def _hash_for_cache(obj: object) -> str:
 def compute_ppmi_with_cache(
     backend: NLPBackend,
     normalizer: Normalizer,
-    texts: Iterable[str],
+    texts: List[str],
     policy: TokenPolicy,
     *,
     cache_dir: Optional[str],
@@ -174,7 +174,7 @@ def compute_ppmi_with_cache(
     l2_normalize: bool = True,
 ) -> PPMIOutputs:
     # per-doc 形態素処理＋正規化TFは既存のキャッシュを再利用
-    per_doc, per_doc_freqs = analyze_with_cache(backend, normalizer, list(texts), policy, cache_dir=cache_dir)
+    per_doc, per_doc_freqs = analyze_with_cache(backend, normalizer, texts, policy, cache_dir=cache_dir)
 
     meta_key = {
         "backend": getattr(backend, "model_name", backend.__class__.__name__),
