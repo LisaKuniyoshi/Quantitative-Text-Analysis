@@ -172,7 +172,7 @@ def stability_top_terms_jaccard(
     svd_dim: int,
     rng: np.random.Generator
 ) -> float:
-    """非対称PPMIのみ対象。文書を半分に分け、各々でPPMI→SVD→クラスタ→上位語20語。Jaccardを平均。"""
+    """文書を半分に分け、各々でPPMI→SVD→クラスタ→上位語20語。Jaccardを平均。"""
     n_docs = len(per_doc_freqs)
     perm = rng.permutation(n_docs)
     A = sorted(perm[: n_docs // 2].tolist())
@@ -293,7 +293,7 @@ def main() -> None:
             except Exception:
                 sil = float("nan")
 
-            # 安定性（非対称のみ）
+            # 安定性
             stab = None
             stab = stability_top_terms_jaccard(
                 per_doc_freqs,
