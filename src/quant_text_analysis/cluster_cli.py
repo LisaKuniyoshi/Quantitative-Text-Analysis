@@ -60,9 +60,10 @@ def l2_normalize_rows(X: np.ndarray | sp.spmatrix) -> np.ndarray:
         X_norm = sk_normalize(X_csr, norm=_L2_NORM, axis=1, copy=False)
         return X_norm.toarray()
     else:
-        norms = np.linalg.norm(X, axis=1, keepdims=True)
+        X_dense = cast(np.ndarray, X)
+        norms = np.linalg.norm(X_dense, axis=1, keepdims=True)
         norms[norms == 0.0] = 1.0
-        return X / norms
+        return X_dense / norms
 
 def cosine_inertia(X_unit: np.ndarray, labels: np.ndarray, centroids_unit: np.ndarray) -> float:
     """1 - cos を総和した損失。小さいほど良い。"""
@@ -78,8 +79,9 @@ def top_terms_by_centroid(
     sims = X_unit @ centroids_unit.T  # (V, k)
     out: Dict[int, List[Tuple[str, float]]] = {}
     for c in range(sims.shape[1]):
-        idx = np.argsort(-sims[:, c])[:top_n]
-        out[c] = [(vocab[i], float(sims[i, c])) for i in idx]
+        scores = sims[:, c]
+        idx = np.argsort(scores)[::-1][:top_n]
+        out[c] = [(vocab[i], float(scores[i])) for i in idx]
     return out
 
 # ----------------------------
