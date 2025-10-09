@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
-from .config import default_columns, default_token_policy, default_ranking_params
+from .config import default_columns, default_token_policy, default_ranking_params, SPACY_MODEL
 from .io_loader import load_df
 from .grouping import period_group_year, method_group
 from .nlp_backend import SpacyBackend
@@ -28,7 +28,6 @@ OUT_DIR: Path | None = OUTPUTS_DIR   # 保存不要なら None に設定
 
 TOP_N: int = 200
 MIN_DOCS: int = 1
-SPACY_MODEL: str = "en_core_web_sm"
 
 # ---- 実行本体 ---------------------------------------------------------------
 def main() -> None:

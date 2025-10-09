@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
-from .config import default_columns, default_token_policy
+from .config import default_columns, default_token_policy, SPACY_MODEL
 from .io_loader import load_df
 from .nlp_backend import SpacyBackend
 from .normalize import build_normalizer
@@ -21,7 +21,6 @@ OUT_DIR: Path = OUTPUTS_DIR / "ppmi"
 
 TOP_N: int = 10_000
 MIN_DOCS: int = 7
-SPACY_MODEL: str = "en_core_web_sm"
 
 def main() -> None:
     cols = default_columns()

@@ -10,7 +10,7 @@ import json
 import numpy as np
 import scipy.sparse as sp
 
-from .config import default_columns, default_token_policy
+from .config import SPACY_MODEL, default_columns, default_token_policy
 from .io_loader import load_df
 from .nlp_backend import SpacyBackend
 from .normalize import build_normalizer
@@ -252,7 +252,7 @@ def main() -> None:
     df = load_df(str(CSV_PATH), cols)
     texts: List[str] = df["abstract"].fillna("").astype(str).tolist()
 
-    backend = SpacyBackend(model="en_core_web_sm")
+    backend = SpacyBackend(model=SPACY_MODEL)
     normalizer = build_normalizer(policy)
 
     # per_doc_freqs（キャッシュ利用）
