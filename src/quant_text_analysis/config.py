@@ -56,7 +56,6 @@ def default_token_policy() -> TokenPolicy:
         ("social", "challenge"),
         ("eating", "disorder"),
         ("theory", "of", "mind"),
-        ("social", "interaction"),
         ("open", "end"),
         ("live", "experience"),
         ("co", "occur"),
@@ -64,8 +63,8 @@ def default_token_policy() -> TokenPolicy:
         ("gender", "diverse"),
         ("posttraumatic", "stress"),
         ("social", "norm"),
-        ("meditation", "analysis"),
-        ("meditation", "analyzes"), # analysesの誤変換
+        ("mediation", "analysis"),
+        ("mediation", "analyzes"), # analysesの誤変換
         ("mix", "method"),
         ("neurodivergent","trait"),
         ("executive", "function"),
