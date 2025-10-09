@@ -60,7 +60,7 @@ def default_token_policy() -> TokenPolicy:
         ("open", "end"),
         ("live", "experience"),
         ("co", "occur"),
-        ("co", "occuring"),
+        ("co", "occurring"),
         ("gender", "diverse"),
         ("posttraumatic", "stress"),
         ("social", "norm"),
