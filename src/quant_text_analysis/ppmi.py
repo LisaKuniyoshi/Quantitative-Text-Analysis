@@ -171,7 +171,6 @@ def compute_ppmi_with_cache(
     cache_dir: Optional[str],
     top_n: int,
     min_docs: int,
-    l2_normalize: bool = True,
 ) -> PPMIOutputs:
     # per-doc 形態素処理＋正規化TFは既存のキャッシュを再利用
     per_doc, per_doc_freqs = analyze_with_cache(backend, normalizer, texts, policy, cache_dir=cache_dir)
@@ -193,7 +192,6 @@ def compute_ppmi_with_cache(
         "ppmi_epsilon": EPS,
         "ppmi_log_base": "e",
         "mode": "tf_norm_fullspace_denominator",  # 不変性担保の方式
-        "l2_normalize": l2_normalize,
     }
     key = _hash_for_cache(meta_key)
 
