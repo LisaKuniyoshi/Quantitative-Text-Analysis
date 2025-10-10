@@ -10,7 +10,7 @@ from .grouping import period_group_year, method_group
 from .nlp_backend import SpacyBackend
 from .normalize import build_normalizer
 from .frequency import frequency_rankings
-from .cache import analyze_with_cache
+from .cache import get_or_analyze_docs
 
 s = Settings()
 cols = s.columns
@@ -27,7 +27,7 @@ def main() -> None:
     normalizer = build_normalizer(policy)
 
     abstracts: List[str] = df["abstract"].fillna("").tolist()
-    _, per_doc_freqs = analyze_with_cache(
+    _, per_doc_freqs = get_or_analyze_docs(
         backend, normalizer, abstracts, policy, cache_dir=str(s.cache_dir)
     )
 

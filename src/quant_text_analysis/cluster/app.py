@@ -12,7 +12,7 @@ from ..settings import Settings
 from ..io_loader import load_df
 from ..nlp_backend import SpacyBackend
 from ..normalize import build_normalizer
-from ..cache import analyze_with_cache
+from ..cache import get_or_analyze_docs
 from ..ppmi import compute_ppmi_from_perdocfreqs
 from .algorithms import l2_normalize_rows, spherical_kmeans
 from .metrics import (
@@ -35,7 +35,7 @@ def main() -> None:
     # 形態素＋正規化（キャッシュ利用）
     backend = SpacyBackend(model=s.spacy_model)
     normalizer = build_normalizer(s.token_policy)
-    _, per_doc_freqs = analyze_with_cache(
+    _, per_doc_freqs = get_or_analyze_docs(
         backend, normalizer, texts, s.token_policy, cache_dir=str(s.cache_dir)
     )
 

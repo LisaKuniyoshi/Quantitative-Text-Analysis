@@ -31,7 +31,7 @@ def _make_key(texts: Iterable[str], policy: TokenPolicy, backend_id: str) -> str
     return h.hexdigest()
 
 
-def analyze_with_cache(
+def get_or_analyze_docs(
     backend: NLPBackend,
     normalizer: Normalizer,
     texts: List[str],
