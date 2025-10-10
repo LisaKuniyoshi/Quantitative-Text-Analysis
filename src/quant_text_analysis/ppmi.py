@@ -11,11 +11,13 @@ import os
 import numpy as np
 import scipy.sparse as sp
 
+from .settings import Settings
 from .data_types import DocResult, TokenPolicy, NLPBackend, Normalizer
-from .cache import analyze_with_cache
 from .frequency import frequency_rankings
 
 EPS: float = 1e-8  # 数値安定用（log のゼロ回避）
+
+s = Settings()
 
 @dataclass(frozen=True)
 class PPMIOutputs:
@@ -24,6 +26,7 @@ class PPMIOutputs:
     X_tf: sp.csr_matrix              # D x V（正規化TF；語彙に制限後の射影行列）
     ppmi_word_doc: sp.csr_matrix     # V x D（非対称PPMI；行=語）
     ppmi_word_word: sp.csr_matrix    # V x V（対称PPMI；行=語）
+    cache_key: Optional[str] = None  # キャッシュ識別子（省略可）
 
 # ----------------------------
 # 語彙選定（cli.py と同じ規則）
@@ -142,9 +145,8 @@ def _ppmi_word_word_from_fullspace(
 # ----------------------------
 # 上位 API（per_doc_freqs → PPMI）
 # ----------------------------
-def compute_ppmi_from_perdocfreqs(
+def _compute_ppmi_from_perdocfreqs(
     per_doc_freqs: List[Dict[str, float]],
-    *,
     top_n: int,
     min_docs: int,
 ) -> PPMIOutputs:
@@ -168,42 +170,36 @@ def _hash_for_cache(obj: object) -> str:
     s = json.dumps(obj, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(s).hexdigest()[:16]
 
-def compute_ppmi_with_cache(
-    backend: NLPBackend,
-    normalizer: Normalizer,
-    texts: List[str],
-    policy: TokenPolicy,
-    *,
-    cache_dir: Optional[str],
-    top_n: int,
-    min_docs: int,
+def _hash_per_doc_freqs(per_doc_freqs: List[Dict[str, float]]) -> str:
+    """per_doc_freqs から軽量ダイジェストを生成（全トークン走査）。"""
+    h = hashlib.sha256()
+    h.update(f"D={len(per_doc_freqs)};".encode("utf-8"))
+    for freq in per_doc_freqs:
+        dh = hashlib.sha256()
+        for w, p in sorted(freq.items()):
+            dh.update(w.encode("utf-8")); dh.update(b"=")
+            dh.update(("{:.12g}".format(float(p))).encode("ascii")); dh.update(b";")
+        h.update(dh.digest())
+    return h.hexdigest()[:16]
+
+def get_or_compute_ppmi(
+    per_doc_freqs: List[Dict[str, float]],
 ) -> PPMIOutputs:
-    # per-doc 形態素処理＋正規化TFは既存のキャッシュを再利用
-    per_doc, per_doc_freqs = analyze_with_cache(backend, normalizer, texts, policy, cache_dir=cache_dir)
+    source_meta = {"source": "per_doc_freqs", "digest": _hash_per_doc_freqs(per_doc_freqs)}
+    base_key = source_meta["digest"]
 
     meta_key = {
-        "backend": getattr(backend, "model_name", backend.__class__.__name__),
-        "policy": {
-            "target_pos": sorted(policy.target_pos),
-            "exclude_ner": sorted(policy.exclude_ner),
-            "exclude_propn": policy.exclude_propn,
-            "exclude_aux": policy.exclude_aux,
-            "keep_surface_for": sorted(policy.keep_surface_for),
-            "forced_phrases": [list(t) for t in policy.forced_phrases],
-            "forced_joiner": policy.forced_joiner,
-        },
-        "n_texts": len(per_doc),
-        "top_n": top_n,
-        "min_docs": min_docs,
-        "ppmi_epsilon": EPS,
+        **source_meta,
+        "top_n": int(s.top_n),
+        "min_docs": int(s.min_docs),
         "ppmi_log_base": "e",
-        "mode": "tf_norm_fullspace_denominator",  # 不変性担保の方式
+        "mode": "tf_norm_fullspace_denominator",
     }
     key = _hash_for_cache(meta_key)
 
-    if cache_dir is not None:
-        os.makedirs(cache_dir, exist_ok=True)
-        base = os.path.join(cache_dir, f"ppmi_{key}")
+    if s.cache_dir is not None:
+        os.makedirs(s.cache_dir, exist_ok=True)
+        base = os.path.join(s.cache_dir, f"ppmi_{key}")
         meta_path  = base + "_meta.json"
         wd_path    = base + "_wd.npz"
         ww_path    = base + "_ww.npz"
@@ -211,19 +207,17 @@ def compute_ppmi_with_cache(
         X_path     = base + "_tf.npz"
         if all(os.path.exists(p) for p in [meta_path, wd_path, ww_path, vocab_path, X_path]):
             vocab = json.load(open(vocab_path, "r", encoding="utf-8"))["vocab"]
-            X = sp.load_npz(X_path)
-            wd = sp.load_npz(wd_path)
-            ww = sp.load_npz(ww_path)
-            return PPMIOutputs(vocab, list(range(X.shape[0])), X, wd, ww)
+            X = sp.load_npz(X_path); wd = sp.load_npz(wd_path); ww = sp.load_npz(ww_path)
+            return PPMIOutputs(vocab, list(range(X.shape[0])), X, wd, ww, cache_key=key)
 
-    out = compute_ppmi_from_perdocfreqs(per_doc_freqs, top_n=top_n, min_docs=min_docs)
+    out = _compute_ppmi_from_perdocfreqs(per_doc_freqs, top_n=s.top_n, min_docs=s.min_docs)
 
-    if cache_dir is not None:
-        base = os.path.join(cache_dir, f"ppmi_{key}")
+    if s.cache_dir is not None:
+        base = os.path.join(s.cache_dir, f"ppmi_{key}")
         json.dump(meta_key, open(base + "_meta.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         json.dump({"vocab": out.vocab}, open(base + "_vocab.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         sp.save_npz(base + "_tf.npz", out.X_tf)
         sp.save_npz(base + "_wd.npz", out.ppmi_word_doc)
         sp.save_npz(base + "_ww.npz", out.ppmi_word_word)
 
-    return out
+    return PPMIOutputs(out.vocab, out.doc_ids, out.X_tf, out.ppmi_word_doc, out.ppmi_word_word, cache_key=key)

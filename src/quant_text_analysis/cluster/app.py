@@ -13,7 +13,7 @@ from ..io_loader import load_df
 from ..nlp_backend import SpacyBackend
 from ..normalize import build_normalizer
 from ..cache import get_or_analyze_docs
-from ..ppmi import compute_ppmi_from_perdocfreqs
+from ..ppmi import get_or_compute_ppmi
 from .algorithms import l2_normalize_rows, spherical_kmeans
 from .metrics import (
     top_terms_by_centroid,
@@ -40,9 +40,7 @@ def main() -> None:
     )
 
     # PPMI（非対称・対称）と語彙
-    ppmi_out = compute_ppmi_from_perdocfreqs(
-        per_doc_freqs, top_n=s.top_n, min_docs=s.min_docs
-    )
+    ppmi_out = get_or_compute_ppmi(per_doc_freqs)
     out_dir = s.ensure_out_dir()
     save_vocab(out_dir, ppmi_out.vocab)
     save_ppmi(out_dir, ppmi_out.ppmi_word_doc, ppmi_out.ppmi_word_word)

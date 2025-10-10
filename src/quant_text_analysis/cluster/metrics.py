@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
 
-from ..ppmi import compute_ppmi_from_perdocfreqs
+from ..ppmi import get_or_compute_ppmi
 from .algorithms import l2_normalize_rows, spherical_kmeans
 
 def top_terms_by_centroid(
@@ -54,7 +54,7 @@ def stability_top_terms_jaccard(
 
     def build_word_space(doc_idx: List[int]) -> Tuple[List[str], np.ndarray]:
         sub = [per_doc_freqs[i] for i in doc_idx]
-        out = compute_ppmi_from_perdocfreqs(sub, top_n=top_n, min_docs=min_docs)
+        out = get_or_compute_ppmi(sub)
         X_wd = out.ppmi_word_doc  # (V, D)
         svd = TruncatedSVD(n_components=min(svd_dim, max(2, min(X_wd.shape) - 1)))
         Z = svd.fit_transform(X_wd)
