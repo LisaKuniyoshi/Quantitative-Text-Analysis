@@ -12,7 +12,7 @@ PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
 DATA_DIR: Path = PROJECT_ROOT / "data"
 RAW_DIR: Path = DATA_DIR / "raw"
 CACHE_DIR: Path = DATA_DIR / "cache"
-OUT_DIR: Path = PROJECT_ROOT / "output"
+OUT_DIR: Path = PROJECT_ROOT / "outputs"
 CSV_PATH: Path = RAW_DIR / "エクスポートされたアイテム.csv"
 
 @dataclass(frozen=True)
