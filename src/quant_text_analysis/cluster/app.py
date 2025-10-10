@@ -72,8 +72,6 @@ def main() -> None:
 
         stab = stability_top_terms_jaccard(
             per_doc_freqs,
-            top_n=s.top_n,
-            min_docs=s.min_docs,
             k=k,
             svd_dim=s.svd_dim,
             rng=rng,

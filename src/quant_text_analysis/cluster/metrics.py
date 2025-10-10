@@ -34,8 +34,6 @@ def jaccard(a: List[str] | set[str], b: List[str] | set[str]) -> float:
 def stability_top_terms_jaccard(
     per_doc_freqs: List[Dict[str, float]],
     *,
-    top_n: int,
-    min_docs: int,
     k: int,
     svd_dim: int,
     rng: np.random.Generator,
