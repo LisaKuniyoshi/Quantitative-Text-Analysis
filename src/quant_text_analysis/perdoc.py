@@ -6,7 +6,7 @@ from .data_types import DocResult, NLPBackend, Normalizer, TokenPolicy, TokenLik
 from breame.spelling import get_american_spelling
 
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ
-_SKIP_PUNCTS = {"-", "‐", "-", "‒", "–", "—", "―", "·", "•"}
+_SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•"}
 # 句点やコロンなどは「語間の橋渡し」に使わない（= そこで強制一致は切れる）
 _BREAK_PUNCTS = {".", "…", ":", ";", "/", "\\", "?", "!", ",", "(", ")", "[", "]", "{", "}", "“", "”", "‘", "’", "'"}
 
