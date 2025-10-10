@@ -5,7 +5,6 @@ from typing import Dict, List
 
 import numpy as np
 from numpy.random import default_rng
-from sklearn.decomposition import TruncatedSVD
 from sklearn.metrics import silhouette_score
 
 from ..settings import Settings
@@ -23,6 +22,7 @@ from .metrics import (
 from .io import (
     save_vocab, save_ppmi, save_top_terms, save_labels, save_metrics, save_cluster_ratio
 )
+from ..embeddings_cache import get_or_svd_embedding
 
 def main() -> None:
     s = Settings()
@@ -47,11 +47,12 @@ def main() -> None:
 
     # 語埋め込み（非対称PPMI→SVD→L2 正規化）
     X_wd = ppmi_out.ppmi_word_doc  # (V, D)
-    svd = TruncatedSVD(
-        n_components=min(s.svd_dim, max(2, min(X_wd.shape) - 1)),
+    Z = get_or_svd_embedding(
+        X_wd,
+        cfg=s,
+        ppmi_cache_key=ppmi_out.cache_key,
         random_state=s.random_seed,
     )
-    Z = svd.fit_transform(X_wd)          # (V, z)
     Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
 
     # k ごとにクラスタリング
