@@ -1,2 +1,0 @@
-[console_scripts]
-quant-text-analysis = quant_text_analysis.cli:main
