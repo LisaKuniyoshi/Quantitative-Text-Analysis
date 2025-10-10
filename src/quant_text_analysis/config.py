@@ -93,5 +93,3 @@ def default_token_policy() -> TokenPolicy:
 
 def default_ranking_params() -> RankingParams:
     return RankingParams(top_n=50, min_docs=1)
-
-SPACY_MODEL: str = "en_core_web_sm"
