@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 .vscode/
 
+*.egg-info/
+
 # --- 本プロジェクトの生成物・作業物 ---
 data/
 outputs/
