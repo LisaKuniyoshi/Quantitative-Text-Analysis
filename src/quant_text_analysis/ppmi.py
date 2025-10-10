@@ -74,12 +74,18 @@ def _compute_marginals_fullspace(
     D = len(per_doc_freqs)
     V = len(vocab)
     s_w = np.zeros(V, dtype=np.float64)
-    for d in range(D):
-        freq = per_doc_freqs[d]
-        for i, w in enumerate(vocab):
-            r = freq.get(w, 0.0)
-            if r:
-                s_w[i] += r
+
+    index = {w: i for i, w in enumerate(vocab)}
+    for freq in per_doc_freqs:
+        if not freq:
+            continue
+        for w, r in freq.items():          # r は「語彙制限前」の正規化TF（c/total）
+            if r <= 0.0:
+                continue
+            j = index.get(w)
+            if j is not None:
+                s_w[j] += float(r)
+
     return s_w, D
 
 # ----------------------------
