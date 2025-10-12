@@ -90,6 +90,3 @@ def default_token_policy() -> TokenPolicy:
         forced_phrases=forced,
         forced_joiner="_",
     )
-
-def default_ranking_params() -> RankingParams:
-    return RankingParams(top_n=50, min_docs=1)
