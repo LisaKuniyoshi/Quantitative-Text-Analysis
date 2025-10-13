@@ -1,6 +1,6 @@
 from __future__ import annotations
-from dataclasses import dataclass, asdict
-from typing import Callable, FrozenSet, Iterable, Iterator, Mapping, Optional, Protocol, Sequence, Tuple, runtime_checkable
+from dataclasses import dataclass
+from typing import Callable, FrozenSet, Iterable, Iterator, Optional, Protocol, Tuple, runtime_checkable
 
 # 列名（注入可能に）
 @dataclass(frozen=True)

@@ -1,7 +1,6 @@
 # quant_text_analysis/cli.py
 from __future__ import annotations
 
-from pathlib import Path
 from typing import List
 
 from ..settings import Settings
@@ -32,8 +31,8 @@ def main() -> None:
     )
 
     overall = frequency_rankings(per_doc_freqs, None, top_n=s.top_n, min_docs=s.min_docs)
-    period  = frequency_rankings(per_doc_freqs, df["period"].tolist(), top_n=s.top_n, min_docs=s.min_docs)
-    method  = frequency_rankings(per_doc_freqs, df["method"].tolist(), top_n=s.top_n, min_docs=s.min_docs)
+    period = frequency_rankings(per_doc_freqs, df["period"].tolist(), top_n=s.top_n, min_docs=s.min_docs)
+    method = frequency_rankings(per_doc_freqs, df["method"].tolist(), top_n=s.top_n, min_docs=s.min_docs)
 
     print(f"\n=== Overall (All documents) | Top {len(overall['ALL'])} ===")
     print(overall["ALL"].to_string(index=False))

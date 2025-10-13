@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import hashlib
 import json
 import os
 import pickle
-from typing import Iterable, Optional, Tuple
 
 from breame.spelling import get_american_spelling
 
@@ -201,7 +200,7 @@ def get_or_analyze_docs(
         文書ごとの解析結果と語の相対頻度分布。
     """
     if cache_dir is None:
-        return analyze_docs(backend, normalizer, texts,policy)
+        return analyze_docs(backend, normalizer, texts, policy)
 
     os.makedirs(cache_dir, exist_ok=True)
     backend_id = getattr(backend, "model_name", backend.__class__.__name__)

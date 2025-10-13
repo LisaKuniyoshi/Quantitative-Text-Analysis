@@ -1,7 +1,7 @@
 # quant_text_analysis/cluster/algorithms.py
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import scipy.sparse as sp

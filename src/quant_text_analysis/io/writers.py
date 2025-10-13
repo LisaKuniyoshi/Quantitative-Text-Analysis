@@ -1,9 +1,10 @@
 # quant_text_analysis/cluster/io.py
 from __future__ import annotations
+import json
 import math
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import json
+
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp

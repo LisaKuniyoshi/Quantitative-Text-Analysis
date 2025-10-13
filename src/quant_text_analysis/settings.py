@@ -1,9 +1,10 @@
 # quant_text_analysis/settings.py
 from __future__ import annotations
+
 from dataclasses import dataclass
+import datetime
 from pathlib import Path
 from typing import Tuple
-import datetime
 
 from .config import default_columns, default_token_policy
 from .data_types import Columns, TokenPolicy
@@ -84,8 +85,8 @@ class Settings:
     # 列名・正規化ポリシ（注入ポイント）
     @property
     def columns(self) -> Columns:
-        """Columns
-        ----------
+        """使用する列名設定を返す。
+
         Returns
         -------
         Columns
@@ -95,7 +96,9 @@ class Settings:
 
     @property
     def token_policy(self) -> TokenPolicy:
-        """Returns
+        """トークン正規化の設定を返す。
+
+        Returns
         -------
         TokenPolicy
             トークン正規化に用いる `TokenPolicy` 設定。
@@ -103,7 +106,9 @@ class Settings:
         return default_token_policy()
 
     def ensure_out_dir(self) -> Path:
-        """Returns
+        """出力ディレクトリを確実に作成して返す。
+
+        Returns
         -------
         Path
             確実に存在する出力ディレクトリのパス。

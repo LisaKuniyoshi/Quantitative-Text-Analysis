@@ -1,7 +1,6 @@
 # quant_text_analysis/cluster/app.py
 from __future__ import annotations
-from pathlib import Path
-from typing import Dict, List
+from typing import List
 
 import numpy as np
 from numpy.random import default_rng

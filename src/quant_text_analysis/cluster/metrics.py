@@ -1,6 +1,6 @@
 # quant_text_analysis/cluster/metrics.py
 from __future__ import annotations
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
 

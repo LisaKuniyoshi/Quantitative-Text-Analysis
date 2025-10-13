@@ -1,8 +1,10 @@
 from __future__ import annotations
-from .data_types import TokenPolicy, RankingParams, Columns
+from .data_types import TokenPolicy, Columns
 
 def default_columns() -> Columns:
-    """Returns
+    """既定の列名設定を返す。
+
+    Returns
     -------
     Columns
         既定の列名設定を表す `Columns` インスタンス。
@@ -10,7 +12,9 @@ def default_columns() -> Columns:
     return Columns()
 
 def default_token_policy() -> TokenPolicy:
-    """Returns
+    """既定のトークン正規化ポリシーを返す。
+
+    Returns
     -------
     TokenPolicy
         既定のトークン正規化ポリシーを表す `TokenPolicy` インスタンス。
@@ -49,8 +53,8 @@ def default_token_policy() -> TokenPolicy:
         ("construct", "validity"),
         ("autistic", "community"),
         ("social", "strategy"),
-        ("clinical", "practice"), 
-        ("systematic", "review"), 
+        ("clinical", "practice"),
+        ("systematic", "review"),
         ("symptom", "severity"),
         ("risk", "factor"),
         ("fear", "of", "negative", "evaluation"),
@@ -74,9 +78,9 @@ def default_token_policy() -> TokenPolicy:
         ("posttraumatic", "stress"),
         ("social", "norm"),
         ("mediation", "analysis"),
-        ("mediation", "analyzes"), # analysesの誤変換
+        ("mediation", "analyzes"),  # analysesの誤変換
         ("mix", "method"),
-        ("neurodivergent","trait"),
+        ("neurodivergent", "trait"),
         ("executive", "function"),
         ("general", "education"),
         ("perceive", "stigma"),
@@ -86,7 +90,6 @@ def default_token_policy() -> TokenPolicy:
         ("internalize", "stigma"),
         ("cognitive", "flexibility"),
         ("compensatory", "behavior"),
-
         ("social", "camouflage"),
         ("social", "camouflaging"),
     )

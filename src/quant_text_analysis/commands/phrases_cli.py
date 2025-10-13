@@ -1,13 +1,12 @@
 # quant_text_analysis/phrase_discovery.py
 from __future__ import annotations
 
-from breame.spelling import get_american_spelling
-
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
 
+from breame.spelling import get_american_spelling
 import pandas as pd
-from gensim.models.phrases import Phrases, Phraser, ENGLISH_CONNECTOR_WORDS
+from gensim.models.phrases import ENGLISH_CONNECTOR_WORDS, Phrases, Phraser
 from gensim.parsing.preprocessing import STOPWORDS
 
 from ..config import default_columns

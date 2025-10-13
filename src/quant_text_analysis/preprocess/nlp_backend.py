@@ -25,7 +25,9 @@ class SpacyBackend:
     """spaCy モデルを用いて文書解析を行うバックエンド。"""
 
     def __init__(self, model: str) -> None:
-        """Parameters
+        """spaCy モデルを読み込む。
+
+        Parameters
         ----------
         model : str
             読み込む spaCy モデル名。
