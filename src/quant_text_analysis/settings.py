@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple
+import datetime
 
 from .config import default_columns, default_token_policy
 from .data_types import Columns, TokenPolicy
@@ -12,7 +13,7 @@ PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
 DATA_DIR: Path = PROJECT_ROOT / "data"
 RAW_DIR: Path = DATA_DIR / "raw"
 CACHE_DIR: Path = DATA_DIR / "cache"
-OUT_DIR: Path = PROJECT_ROOT / "outputs"
+OUT_DIR: Path = PROJECT_ROOT / "outputs" / datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 CSV_PATH: Path = RAW_DIR / "エクスポートされたアイテム.csv"
 
 @dataclass(frozen=True)
