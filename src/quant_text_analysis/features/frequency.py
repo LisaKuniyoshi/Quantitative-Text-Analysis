@@ -8,8 +8,8 @@ def frequency_rankings(
     per_doc_freqs: List[Dict[str, float]],
     groups: Optional[List[Optional[str]]] = None,
     *,
-    top_n: int = 50,
-    min_docs: int = 1,
+    top_n: int,
+    min_docs: int,
 ) -> Dict[str, pd.DataFrame]:
     """語相対頻度をグループ別に集計しランキングを生成する。
 
@@ -19,9 +19,9 @@ def frequency_rankings(
         文書ごとの語相対頻度分布。
     groups : Optional[List[Optional[str]]], default None
         文書が属するグループラベル。None の場合は全件を単一グループ扱い。
-    top_n : int, default 50
+    top_n : int
         グループごとに保持する語数。
-    min_docs : int, default 1
+    min_docs : int
         採用するために必要な最小出現文書数。
 
     Returns

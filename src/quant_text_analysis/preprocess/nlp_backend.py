@@ -24,10 +24,10 @@ class _SpacyDocAdapter:
 class SpacyBackend:
     """spaCy モデルを用いて文書解析を行うバックエンド。"""
 
-    def __init__(self, model: str = "en_core_web_sm") -> None:
+    def __init__(self, model: str) -> None:
         """Parameters
         ----------
-        model : str, default "en_core_web_sm"
+        model : str
             読み込む spaCy モデル名。
         """
         self._nlp = spacy.load(model)
