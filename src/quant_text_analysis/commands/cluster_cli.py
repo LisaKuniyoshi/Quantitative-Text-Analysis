@@ -11,7 +11,7 @@ from ..settings import Settings
 from ..io.loader import load_df
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
-from ..preprocess.cache import get_or_analyze_docs
+from ..preprocess.perdoc import get_or_analyze_docs
 from ..features.ppmi import get_or_compute_ppmi
 from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
 from ..cluster.metrics import (

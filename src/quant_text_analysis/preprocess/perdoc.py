@@ -1,15 +1,25 @@
 from __future__ import annotations
+
 from collections import Counter
 from typing import Dict, List, Sequence, Tuple
+import hashlib
+import json
+import os
+import pickle
+from typing import Iterable, Optional, Tuple
+
+from breame.spelling import get_american_spelling
 
 from ..data_types import DocResult, NLPBackend, Normalizer, TokenPolicy, TokenLike
-from breame.spelling import get_american_spelling
 
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ
 _SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•"}
 # 句点やコロンなどは「語間の橋渡し」に使わない（= そこで強制一致は切れる）
 _BREAK_PUNCTS = {".", "…", ":", ";", "/", "\\", "?", "!", ",", "(", ")", "[", "]", "{", "}", "“", "”", "‘", "’", "'"}
 
+# ----------------------------
+# 強制フレーズ辞書
+# ----------------------------
 
 def _build_forced_index(policy: TokenPolicy) -> Dict[Tuple[str, ...], str]:
     """強制抽出辞書（キー＝lemma列の小文字タプル、値＝結合トークン）"""
@@ -31,6 +41,9 @@ def _is_break_punct(tok: TokenLike) -> bool:
     t = tok.text
     return (tok.pos_ == "PUNCT") and (t in _BREAK_PUNCTS)
 
+# ----------------------------
+# 主処理：文書ごとの正規化トークンと文書内相対頻度
+# ----------------------------
 
 def analyze_docs(
     backend: NLPBackend,
@@ -120,3 +133,54 @@ def analyze_docs(
             per_doc_freqs.append({w: c / float(total) for w, c in cnt.items()})
 
     return per_doc, per_doc_freqs
+
+# ----------------------------
+# キャッシュ付きラッパ
+# ----------------------------
+
+def _policy_fingerprint(policy: TokenPolicy) -> dict[str, object]:
+    # frozenset を JSON 化可能な list に落とす
+    return {
+        "target_pos": sorted(policy.target_pos),
+        "exclude_ner": sorted(policy.exclude_ner),
+        "exclude_propn": policy.exclude_propn,
+        "exclude_aux": policy.exclude_aux,
+        "keep_surface_for": sorted(policy.keep_surface_for),
+        "alpha_regex": policy.alpha_regex,
+        "forced_phrases": [list(p) for p in sorted(policy.forced_phrases)],
+        "forced_joiner": policy.forced_joiner,
+    }
+
+def _make_key(texts: Iterable[str], policy: TokenPolicy, backend_id: str) -> str:
+    h = hashlib.sha256()
+    for t in texts:
+        h.update((t or "").encode("utf-8"))
+    h.update(json.dumps(_policy_fingerprint(policy), sort_keys=True, separators=(",", ":")).encode("utf-8"))
+    h.update(backend_id.encode("utf-8"))
+    return h.hexdigest()
+
+
+def get_or_analyze_docs(
+    backend: NLPBackend,
+    normalizer: Normalizer,
+    texts: List[str],
+    policy: TokenPolicy,
+    *,
+    cache_dir: Optional[str] = None,
+) -> Tuple[List[DocResult], List[Dict[str, float]]]:
+    if cache_dir is None:
+        return analyze_docs(backend, normalizer, texts,policy)
+
+    os.makedirs(cache_dir, exist_ok=True)
+    backend_id = getattr(backend, "model_name", backend.__class__.__name__)
+    key = _make_key(texts, policy, str(backend_id))
+    path = os.path.join(cache_dir, f"per_doc_freqs_{key}.pkl")
+
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+
+    result = analyze_docs(backend, normalizer, texts, policy)
+    with open(path, "wb") as f:
+        pickle.dump(result, f)
+    return result

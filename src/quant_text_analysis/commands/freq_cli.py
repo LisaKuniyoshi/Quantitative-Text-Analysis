@@ -10,7 +10,7 @@ from ..grouping import period_group_year, method_group
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
 from ..features.frequency import frequency_rankings
-from ..preprocess.cache import get_or_analyze_docs
+from ..preprocess.perdoc import get_or_analyze_docs
 
 s = Settings()
 cols = s.columns
