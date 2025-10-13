@@ -11,8 +11,7 @@ import os
 import numpy as np
 import scipy.sparse as sp
 
-from .settings import Settings
-from .data_types import DocResult, TokenPolicy, NLPBackend, Normalizer
+from ..settings import Settings
 from .frequency import frequency_rankings
 
 EPS: float = 1e-8  # 数値安定用（log のゼロ回避）

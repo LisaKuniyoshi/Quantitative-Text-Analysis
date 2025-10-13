@@ -4,13 +4,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
-from .settings import Settings
-from .io_loader import load_df
-from .grouping import period_group_year, method_group
-from .nlp_backend import SpacyBackend
-from .normalize import build_normalizer
-from .frequency import frequency_rankings
-from .cache import get_or_analyze_docs
+from ..settings import Settings
+from ..io.loader import load_df
+from ..grouping import period_group_year, method_group
+from ..preprocess.nlp_backend import SpacyBackend
+from ..preprocess.normalize import build_normalizer
+from ..features.frequency import frequency_rankings
+from ..preprocess.cache import get_or_analyze_docs
 
 s = Settings()
 cols = s.columns

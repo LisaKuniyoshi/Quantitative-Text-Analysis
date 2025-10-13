@@ -8,21 +8,21 @@ from numpy.random import default_rng
 from sklearn.metrics import silhouette_score
 
 from ..settings import Settings
-from ..io_loader import load_df
-from ..nlp_backend import SpacyBackend
-from ..normalize import build_normalizer
-from ..cache import get_or_analyze_docs
-from ..ppmi import get_or_compute_ppmi
-from .algorithms import l2_normalize_rows, spherical_kmeans
-from .metrics import (
+from ..io.loader import load_df
+from ..preprocess.nlp_backend import SpacyBackend
+from ..preprocess.normalize import build_normalizer
+from ..preprocess.cache import get_or_analyze_docs
+from ..features.ppmi import get_or_compute_ppmi
+from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
+from ..cluster.metrics import (
     top_terms_by_centroid,
     stability_top_terms_jaccard,
     abstract_cluster_ratio,
 )
-from .io import (
+from ..io.writers import (
     save_vocab, save_ppmi, save_top_terms, save_labels, save_metrics, save_cluster_ratio
 )
-from ..embeddings_cache import get_or_svd_embedding
+from ..features.embeddings import get_or_svd_embedding
 
 def main() -> None:
     s = Settings()

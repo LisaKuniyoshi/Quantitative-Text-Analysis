@@ -1,7 +1,7 @@
 from __future__ import annotations
 import re
 from typing import Optional
-from .data_types import TokenPolicy, Normalizer, TokenLike
+from ..data_types import TokenPolicy, Normalizer, TokenLike
 
 def build_normalizer(policy: TokenPolicy) -> Normalizer:
     pat = re.compile(policy.alpha_regex).match

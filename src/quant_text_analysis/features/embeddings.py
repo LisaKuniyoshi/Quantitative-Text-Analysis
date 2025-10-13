@@ -9,7 +9,7 @@ import numpy as np
 import scipy.sparse as sp
 from sklearn.decomposition import TruncatedSVD
 
-from .settings import Settings
+from ..settings import Settings
 
 ArrayLike = Union[np.ndarray, sp.spmatrix]
 

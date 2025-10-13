@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
 
-from ..ppmi import get_or_compute_ppmi
+from ..features.ppmi import get_or_compute_ppmi
 from .algorithms import l2_normalize_rows, spherical_kmeans
 
 def top_terms_by_centroid(

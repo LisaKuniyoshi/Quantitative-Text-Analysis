@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Dict, List, Sequence, Tuple
 
-from .data_types import DocResult, NLPBackend, Normalizer, TokenPolicy, TokenLike
+from ..data_types import DocResult, NLPBackend, Normalizer, TokenPolicy, TokenLike
 from breame.spelling import get_american_spelling
 
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ

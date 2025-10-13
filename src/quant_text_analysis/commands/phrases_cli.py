@@ -10,14 +10,12 @@ import pandas as pd
 from gensim.models.phrases import Phrases, Phraser, ENGLISH_CONNECTOR_WORDS
 from gensim.parsing.preprocessing import STOPWORDS
 
-from .config import default_columns
-from .io_loader import load_df
+from ..config import default_columns
+from ..settings import Settings
+from ..io.loader import load_df
 
-BASE_DIR: Path = Path(__file__).resolve().parents[2]
-
-CSV_PATH: Path = BASE_DIR / "data" / "raw" / "エクスポートされたアイテム.csv"
-OUT_DIR: Path = BASE_DIR / "outputs"
-OUT_FILE: Path = OUT_DIR / "phrases_gensim.csv"
+settings = Settings()
+OUT_FILE: Path = settings.out_dir / "phrases_gensim.csv"
 
 MIN_COUNT_BIGRAM: int = 5
 THRESHOLD_BIGRAM: float = 10.0
@@ -96,10 +94,11 @@ def count_phrase_usage(
 
 # ---- 実行本体 ----
 def main() -> None:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    settings.ensure_out_dir()
 
     cols = default_columns()
-    df = load_df(str(CSV_PATH), cols)
+    df = load_df(str(Settings.csv_path), cols)
     texts: List[str] = df["abstract"].fillna("").astype(str).tolist()
 
     corpus = build_corpus(texts)

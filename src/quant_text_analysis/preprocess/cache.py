@@ -5,7 +5,7 @@ import os
 import pickle
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from .data_types import TokenPolicy, DocResult, NLPBackend, Normalizer
+from ..data_types import TokenPolicy, DocResult, NLPBackend, Normalizer
 from .perdoc import analyze_docs
 
 

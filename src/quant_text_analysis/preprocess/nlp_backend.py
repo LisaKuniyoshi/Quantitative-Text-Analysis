@@ -3,7 +3,7 @@ from typing import Iterable, Iterator
 import spacy
 from spacy.tokens import Doc, Token
 
-from .data_types import NLPBackend, DocLike, TokenLike
+from ..data_types import DocLike, TokenLike
 
 class _SpacyTokenAdapter:
     __slots__ = ("text", "ent_type_", "pos_", "lemma_")

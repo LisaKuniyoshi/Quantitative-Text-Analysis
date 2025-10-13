@@ -1,6 +1,6 @@
 from __future__ import annotations
 import pandas as pd
-from .data_types import Columns
+from ..data_types import Columns
 
 # pandas の戻り値型はライブラリ側型定義に委ねる
 
