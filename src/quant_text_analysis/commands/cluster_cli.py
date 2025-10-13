@@ -1,8 +1,36 @@
-# quant_text_analysis/cluster/app.py
+"""Word clustering pipeline (PPMI → SVD → spherical k-means).
+
+概要
+----
+既定の設定 (`Settings`) に基づき、要旨コーパスから語×文書PPMIを計算し、
+SVDによる語埋め込みをL2正規化して球面k-meansでクラスタリングします。
+語彙・PPMI行列・クラスタ結果と各種メトリクスを出力します。
+
+I/O
+---
+Reads
+    - CSV: Settings.csv_path に指定された書誌CSV（要旨・年・手作業タグ列）
+Writes
+    - outputs/vocab.json
+    - outputs/PPMI_word_doc_VxD.npz, outputs/PPMI_word_word_VxV.npz
+    - outputs/top_terms_k{K}.csv, outputs/labels_k{K}.csv
+    - outputs/metrics_k{K}.json, outputs/abstract_ratio_k{K}.npy
+
+Configuration
+-------------
+- すべて `Settings` で指定（パス、`k_list`, `svd_dim`, `random_seed` など）。
+- 形態素解析は spaCy（`spacy_model`）。per-doc頻度はキャッシュ可能。
+
+Examples
+--------
+>>> # パッケージとして実行
+>>> python -m quant_text_analysis.cluster.app
+>>> # もしくはスクリプトとして
+>>> python path/to/cluster_cli.py
+"""
 from __future__ import annotations
 from typing import List
 
-import numpy as np
 from numpy.random import default_rng
 from sklearn.metrics import silhouette_score
 
@@ -24,6 +52,18 @@ from ..io.writers import (
 from ..features.embeddings import get_or_svd_embedding
 
 def main() -> None:
+    """Run the full clustering pipeline.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - 乱数 : `Settings.random_seed` に従います。
+    - キャッシュ : per-doc頻度・PPMI・SVDはキャッシュを利用する実装です。
+    - 本関数は標準出力へのサマリ表示と、上記ファイル群の書き出しを行います。
+    """
     s = Settings()
     rng = default_rng(s.random_seed)
 

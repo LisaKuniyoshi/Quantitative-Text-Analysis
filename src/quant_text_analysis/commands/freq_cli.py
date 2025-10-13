@@ -1,4 +1,31 @@
-# quant_text_analysis/cli.py
+"""Token frequency rankings for overall and predefined groups.
+
+概要
+----
+`Settings`に基づいてCSVを読み込み、文書内相対頻度 r(d,w) を平均化して
+上位語を算出します。全体・年代・研究手法のランキングを表示し、
+指定があればCSVに保存します。
+
+I/O
+---
+Reads
+    - CSV: Settings.csv_path
+Writes
+    - outputs/top_words_overall.csv
+    - outputs/top_words_period_{グループ名}.csv
+    - outputs/top_words_method_{グループ名}.csv
+
+Grouping
+--------
+- 年代 : "2014–2021" / "2022–2023" / "2024–2025"
+- 手法 : "qual" / "quan" / "theoretic" / "review" / "other"
+
+Examples
+--------
+>>> python -m quant_text_analysis.cli
+>>> # or
+>>> python path/to/freq_cli.py
+"""
 from __future__ import annotations
 
 from typing import List
@@ -17,7 +44,17 @@ policy = s.token_policy
 
 # ---- 実行本体 ---------------------------------------------------------------
 def main() -> None:
+    """Compute and print frequency rankings; optionally write CSV files.
 
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - 文書ごとの相対頻度を平均化し、`Settings.top_n`, `Settings.min_docs`でフィルタします。
+    - `Settings.out_dir` が設定されている場合にCSVを書き出します。
+    """
     df = load_df(str(s.csv_path), cols)
     df["period"] = df["year"].map(period_group_year)
     df["method"] = df["manual_tags"].map(method_group)

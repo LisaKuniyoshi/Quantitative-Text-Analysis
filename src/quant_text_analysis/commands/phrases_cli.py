@@ -1,4 +1,29 @@
-# quant_text_analysis/phrase_discovery.py
+"""Phrase mining with Gensim Phrases (bigrams/trigrams).
+
+概要
+----
+英字トークン化と英米表記統一（breame）を行い、Gensim Phrasesで
+bigram/trigramを学習します。モデル由来スコアと実コーパスでの使用統計を
+結合し、スコア・出現数・文書率などの指標をCSVに保存します。
+
+I/O
+---
+Reads
+    - CSV: Settings.csv_path（要旨列）
+Writes
+    - outputs/phrases_gensim.csv
+
+Notes
+-----
+- Phrases学習は `ENGLISH_CONNECTOR_WORDS` を接続語として用います。
+- 表記統一に `breame.spelling.get_american_spelling` を使用します。
+
+Examples
+--------
+>>> python -m quant_text_analysis.phrase_discovery
+>>> # or
+>>> python path/to/phrases_cli.py
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -40,6 +65,24 @@ def train_phrases(
     *,
     connector_words: Iterable[str],
 ) -> Phrases:
+    """Phrases モデルを学習して返す。
+
+    Parameters
+    ----------
+    corpus : Sequence[Sequence[str]]
+        学習対象のトークン化済み文書群。
+    min_count : int
+        フレーズ抽出の最小出現回数。
+    threshold : float
+        スコア閾値。
+    connector_words : Iterable[str]
+        接続語として扱う語集合。
+
+    Returns
+    -------
+    gensim.models.phrases.Phrases
+        学習済みモデル。
+    """
     # gensim 4.3.x では common_terms ではなく connector_words を使用
     model = Phrases(
         corpus,
@@ -51,9 +94,17 @@ def train_phrases(
     return model
 
 def phrase_df_from_model(model: Phrases) -> pd.DataFrame:
-    """
-    公開APIの export_phrases() を用いて候補を取得。
-    戻り値は { 'phrase_with_joiner': score, ... }。
+    """Phrases モデルから候補フレーズを抽出する。
+
+    Parameters
+    ----------
+    model : gensim.models.phrases.Phrases
+        評価対象の Phrases モデル。
+
+    Returns
+    -------
+    pandas.DataFrame
+        フレーズ・語数・スコアの一覧。
     """
     phrases: Dict[str, float] = model.export_phrases()  # type: ignore[attr-defined]
     if not phrases:
@@ -93,7 +144,17 @@ def count_phrase_usage(
 
 # ---- 実行本体 ----
 def main() -> None:
-    
+    """Train bigram/trigram models and export candidate phrases.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - bi→triの順に適用し、モデルの `export_phrases()` と実使用回数をマージします。
+    - 上位候補は標準出力に表示し、全結果を CSV に保存します。
+    """
     settings.ensure_out_dir()
 
     cols = default_columns()
