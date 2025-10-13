@@ -25,10 +25,21 @@ def _svd_embedding(
     *,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """
-    純粋関数：PPMI(語×文書)行列から SVD による語埋め込みを生成する。
-    settings やキャッシュには一切触れない。
-    戻り値 Z の形状は (V, svd_dim')。svd_dim' は次元制約により svd_dim から減衰し得る。
+    """PPMI 行列から SVD による語埋め込みを生成する。
+
+    Parameters
+    ----------
+    X_wd : ArrayLike
+        語×文書の PPMI 行列。
+    svd_dim : int
+        希望する埋め込み次元。
+    random_state : Optional[int], default None
+        SVD の乱数シード。
+
+    Returns
+    -------
+    numpy.ndarray
+        形状 (V, svd_dim') の語埋め込み行列。
     """
     # SVD 次元は行列の最小次元-1を上限とする
     n_components = int(min(svd_dim, max(2, min(X_wd.shape) - 1)))
@@ -44,12 +55,23 @@ def get_or_svd_embedding(
     ppmi_cache_key: Optional[str] = None,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """
-    settings を参照し、SVD 埋め込みをキャッシュから取得する。
-    キャッシュが無ければ `_svd_embedding` で生成して保存し、その結果を返す。
+    """SVD 埋め込みをキャッシュから取得または計算して返す。
 
-    キーは {ppmi_cache_key, svd_dim, shape, nnz} から算出する。
-    cache_dir が未設定(None)の場合はキャッシュを使わず計算のみ行う。
+    Parameters
+    ----------
+    X_wd : ArrayLike
+        語×文書の PPMI 行列。
+    cfg : Optional[Settings], default None
+        設定オブジェクト。None の場合は既定値を利用。
+    ppmi_cache_key : Optional[str], default None
+        PPMI 計算時のキャッシュキー。
+    random_state : Optional[int], default None
+        SVD の乱数シード。未指定時は設定値を使用。
+
+    Returns
+    -------
+    numpy.ndarray
+        語埋め込み行列。キャッシュ未使用時は新たに計算される。
     """
     s = cfg or Settings()
 

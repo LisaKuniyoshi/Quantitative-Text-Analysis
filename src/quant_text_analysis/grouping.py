@@ -3,6 +3,18 @@ from typing import Optional
 import pandas as pd
 
 def period_group_year(y: Optional[int]) -> Optional[str]:
+    """発行年から集計用の期間ラベルを生成する。
+
+    Parameters
+    ----------
+    y : Optional[int]
+        発行年。NaN もしくは None の場合は未分類とみなす。
+
+    Returns
+    -------
+    Optional[str]
+        期間ラベル。該当しない場合は None。
+    """
     if y is None or pd.isna(y):
         return None
     yi = int(y)
@@ -15,6 +27,18 @@ def period_group_year(y: Optional[int]) -> Optional[str]:
     return None
 
 def method_group(tags: Optional[str]) -> Optional[str]:
+    """手動タグから研究手法カテゴリを推定する。
+
+    Parameters
+    ----------
+    tags : Optional[str]
+        セミコロン区切りの手法タグ文字列。
+
+    Returns
+    -------
+    Optional[str]
+        推定されたカテゴリ。該当しない場合は None。
+    """
     if tags is None:
         return None
     s = tags.lower()

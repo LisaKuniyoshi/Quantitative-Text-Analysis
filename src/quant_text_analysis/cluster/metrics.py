@@ -13,8 +13,23 @@ def top_terms_by_centroid(
     centroids_unit: np.ndarray,
     top_n: int
 ) -> Dict[int, List[Tuple[str, float]]]:
-    """
-    各重心に最も近い語（cos 類似度が高い順）を返す。
+    """クラスタ重心と語ベクトルの cos 類似度から上位語を抽出する。
+
+    Parameters
+    ----------
+    X_unit : numpy.ndarray
+        語ベクトル行列（各行が単位ベクトル）。
+    vocab : List[str]
+        語彙リスト。
+    centroids_unit : numpy.ndarray
+        クラスタ重心の単位ベクトル行列。
+    top_n : int
+        返す語数。
+
+    Returns
+    -------
+    Dict[int, List[Tuple[str, float]]]
+        クラスタ ID ごとの語と類似度のリスト。
     """
     sims = X_unit @ centroids_unit.T  # (V, k)
     out: Dict[int, List[Tuple[str, float]]] = {}
@@ -24,6 +39,20 @@ def top_terms_by_centroid(
     return out
 
 def jaccard(a: List[str] | set[str], b: List[str] | set[str]) -> float:
+    """2 集合間の Jaccard 係数を計算する。
+
+    Parameters
+    ----------
+    a : list[str] or set[str]
+        一方の語集合。
+    b : list[str] or set[str]
+        もう一方の語集合。
+
+    Returns
+    -------
+    float
+        Jaccard 係数。双方空集合の場合は 1.0。
+    """
     A, B = set(a), set(b)
     if not A and not B:
         return 1.0
@@ -40,10 +69,27 @@ def stability_top_terms_jaccard(
     top_words_per_cluster: int = 20,
     max_iter: int = 300
 ) -> float:
-    """
-    文書を半分に分割し、それぞれで
-    PPMI(非対称)→SVD→L2正規化→spherical k-means→上位語集合
-    を作成。クラスタ間を貪欲マッチで対応付け、Jaccard を平均。
+    """クラスタ上位語集合の安定性を Jaccard 係数で測定する。
+
+    Parameters
+    ----------
+    per_doc_freqs : List[Dict[str, float]]
+        文書ごとの語確率分布。
+    k : int
+        クラスタ数。
+    svd_dim : int
+        SVD の潜在次元。
+    rng : numpy.random.Generator
+        乱数生成器。
+    top_words_per_cluster : int, default 20
+        各クラスタで抽出する上位語数。
+    max_iter : int, default 300
+        spherical k-means の最大反復回数。
+
+    Returns
+    -------
+    float
+        対応付けたクラスタ間の Jaccard 係数平均。計算不能時は NaN。
     """
     n_docs = len(per_doc_freqs)
     perm = rng.permutation(n_docs)
@@ -91,9 +137,21 @@ def abstract_cluster_ratio(
     vocab: List[str],
     labels: np.ndarray
 ) -> np.ndarray:
-    """
-    各文書 d に対し、語彙内の語のうちクラスタ c に属する確率質量
-    の比率を返す (D, k)。分母には OOV を含む。
+    """文書ごとのクラスタ比率行列を算出する。
+
+    Parameters
+    ----------
+    per_doc_freqs : List[Dict[str, float]]
+        文書内語の確率分布。
+    vocab : List[str]
+        語彙リスト。
+    labels : numpy.ndarray
+        語彙に対応するクラスタラベル。
+
+    Returns
+    -------
+    numpy.ndarray
+        文書 × クラスタの比率行列。
     """
     word2idx = {w: i for i, w in enumerate(vocab)}
     k = int(labels.max()) + 1

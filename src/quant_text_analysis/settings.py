@@ -18,6 +18,42 @@ CSV_PATH: Path = RAW_DIR / "エクスポートされたアイテム.csv"
 
 @dataclass(frozen=True)
 class Settings:
+    """プロジェクト全体の設定値を保持する不変データクラス。
+
+    Attributes
+    ----------
+    project_root : Path
+        プロジェクトルートディレクトリ。
+    data_dir : Path
+        データフォルダへのパス。
+    raw_dir : Path
+        生データ格納先のパス。
+    cache_dir : Path
+        中間生成物を保存するキャッシュディレクトリ。
+    out_dir : Path
+        出力ディレクトリのルート。
+    csv_path : Path
+        入力 CSV ファイルのパス。
+    spacy_model : str
+        利用する spaCy モデル名。
+    top_n : int
+        語彙選定時に保持する上位語数。
+    min_docs : int
+        語彙選定時の最小文書出現数。
+    svd_dim : int
+        SVD における埋め込み次元。
+    k_list : Tuple[int, ...]
+        評価するクラスタ数の候補。
+    n_init : int
+        k-means の初期化回数。
+    max_iter : int
+        k-means の最大反復回数。
+    random_seed : int
+        乱数シード値。
+    top_words_per_cluster : int
+        クラスタごとの上位語数。
+    """
+
     # パス
     project_root: Path = PROJECT_ROOT
     data_dir: Path = DATA_DIR
@@ -48,12 +84,29 @@ class Settings:
     # 列名・正規化ポリシ（注入ポイント）
     @property
     def columns(self) -> Columns:
+        """Columns
+        ----------
+        Returns
+        -------
+        Columns
+            使用する列名設定を表す `Columns` インスタンス。
+        """
         return default_columns()
 
     @property
     def token_policy(self) -> TokenPolicy:
+        """Returns
+        -------
+        TokenPolicy
+            トークン正規化に用いる `TokenPolicy` 設定。
+        """
         return default_token_policy()
 
     def ensure_out_dir(self) -> Path:
+        """Returns
+        -------
+        Path
+            確実に存在する出力ディレクトリのパス。
+        """
         self.out_dir.mkdir(parents=True, exist_ok=True)
         return self.out_dir

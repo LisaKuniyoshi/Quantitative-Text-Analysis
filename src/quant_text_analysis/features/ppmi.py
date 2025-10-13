@@ -20,6 +20,23 @@ s = Settings()
 
 @dataclass(frozen=True)
 class PPMIOutputs:
+    """PPMI 計算から得られる主要な成果物を保持するデータクラス。
+
+    Attributes
+    ----------
+    vocab : List[str]
+        語彙リスト（行順）。
+    doc_ids : List[int]
+        文書 ID のリスト。
+    X_tf : scipy.sparse.csr_matrix
+        文書×語の正規化 TF 行列。
+    ppmi_word_doc : scipy.sparse.csr_matrix
+        語×文書の非対称 PPMI 行列。
+    ppmi_word_word : scipy.sparse.csr_matrix
+        語×語の対称 PPMI 行列。
+    cache_key : Optional[str]
+        キャッシュ識別子。未設定時は None。
+    """
     vocab: List[str]                 # 行=語の順序
     doc_ids: List[int]               # 0..D-1
     X_tf: sp.csr_matrix              # D x V（正規化TF；語彙に制限後の射影行列）
@@ -184,6 +201,18 @@ def _hash_per_doc_freqs(per_doc_freqs: List[Dict[str, float]]) -> str:
 def get_or_compute_ppmi(
     per_doc_freqs: List[Dict[str, float]],
 ) -> PPMIOutputs:
+    """per-doc 頻度から PPMI を計算しキャッシュを活用して返す。
+
+    Parameters
+    ----------
+    per_doc_freqs : List[Dict[str, float]]
+        文書ごとの語相対頻度分布。
+
+    Returns
+    -------
+    PPMIOutputs
+        語彙・TF 行列・PPMI 行列のセット。キャッシュ利用時は `cache_key` を含む。
+    """
     source_meta = {"source": "per_doc_freqs", "digest": _hash_per_doc_freqs(per_doc_freqs)}
     base_key = source_meta["digest"]
 

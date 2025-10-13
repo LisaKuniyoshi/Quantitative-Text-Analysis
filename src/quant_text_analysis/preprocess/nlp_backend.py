@@ -22,9 +22,29 @@ class _SpacyDocAdapter:
             yield _SpacyTokenAdapter(tok)
 
 class SpacyBackend:
+    """spaCy モデルを用いて文書解析を行うバックエンド。"""
+
     def __init__(self, model: str = "en_core_web_sm") -> None:
+        """Parameters
+        ----------
+        model : str, default "en_core_web_sm"
+            読み込む spaCy モデル名。
+        """
         self._nlp = spacy.load(model)
         self.model_name: str = model
+
     def pipe(self, texts: Iterable[str]) -> Iterator[DocLike]:
+        """spaCy の逐次パイプラインで文書を解析する。
+
+        Parameters
+        ----------
+        texts : Iterable[str]
+            解析対象のテキスト列。
+
+        Returns
+        -------
+        Iterator[DocLike]
+            spaCy 互換のドキュメントイテレータ。
+        """
         for doc in self._nlp.pipe(texts):
             yield _SpacyDocAdapter(doc)

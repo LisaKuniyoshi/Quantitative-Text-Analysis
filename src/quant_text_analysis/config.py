@@ -2,9 +2,19 @@ from __future__ import annotations
 from .data_types import TokenPolicy, RankingParams, Columns
 
 def default_columns() -> Columns:
+    """Returns
+    -------
+    Columns
+        既定の列名設定を表す `Columns` インスタンス。
+    """
     return Columns()
 
 def default_token_policy() -> TokenPolicy:
+    """Returns
+    -------
+    TokenPolicy
+        既定のトークン正規化ポリシーを表す `TokenPolicy` インスタンス。
+    """
     forced = (
         ("autistic", "trait"),
         ("mental", "health"),

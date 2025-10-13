@@ -10,9 +10,17 @@ from sklearn.preprocessing import normalize as sk_normalize
 _L2_NORM = "l2"
 
 def l2_normalize_rows(X: np.ndarray) -> np.ndarray:
-    """
-    行ごとの L2 正規化。返り値は密行列。
-    疎行列の場合は copy=False で無駄なアロケーションを避ける。
+    """行方向に L2 正規化を施した行列を返す。
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        正規化対象の行列。
+
+    Returns
+    -------
+    numpy.ndarray
+        各行のノルムが 1 となる行列。
     """
     if sp.issparse(X):
         X_csr = sp.csr_matrix(X)
@@ -23,14 +31,37 @@ def l2_normalize_rows(X: np.ndarray) -> np.ndarray:
     return X / norms
 
 def cosine_inertia(X_unit: np.ndarray, labels: np.ndarray, centroids_unit: np.ndarray) -> float:
-    """
-    Σ(1 - cos(x_i, μ_{label_i})) を返す。小さいほど良い。
-    X_unit と centroids_unit は行単位ベクトルを想定。
+    """cos 類似度に基づくクラスタリングの慣性を計算する。
+
+    Parameters
+    ----------
+    X_unit : numpy.ndarray
+        サンプルの単位ベクトル行列。
+    labels : numpy.ndarray
+        各サンプルのクラスタ割当。
+    centroids_unit : numpy.ndarray
+        クラスタ重心の単位ベクトル行列。
+
+    Returns
+    -------
+    float
+        Σ(1 - cos(x_i, μ_{label_i})) の値。
     """
     return float(np.sum(1.0 - np.einsum("ij,ij->i", X_unit, centroids_unit[labels])))
 
 @dataclass
 class SKMeansResult:
+    """spherical k-means の結果を保持するデータクラス。
+
+    Attributes
+    ----------
+    labels_ : numpy.ndarray
+        サンプルごとのクラスタ割当。
+    centroids_ : numpy.ndarray
+        単位ベクトルで表現されたクラスタ重心。
+    inertia_ : float
+        cos 慣性の値。
+    """
     labels_: np.ndarray           # (n_samples,)
     centroids_: np.ndarray        # (k, d) unit
     inertia_: float               # Σ(1 - cos)
@@ -68,9 +99,25 @@ def spherical_kmeans(
     max_iter: int,
     rng: Optional[np.random.Generator] = None
 ) -> SKMeansResult:
-    """
-    cos 類似度最大化（= cos 距離最小化）の spherical k-means。
-    X_unit は行 L2=1 を前提。
+    """cos 類似度最大化を目的とした spherical k-means を実行する。
+
+    Parameters
+    ----------
+    X_unit : numpy.ndarray
+        行ごとに正規化されたサンプルベクトル。
+    k : int
+        生成するクラスタ数。
+    n_init : int
+        初期化回数。
+    max_iter : int
+        最大反復回数。
+    rng : numpy.random.Generator, optional
+        乱数生成器。
+
+    Returns
+    -------
+    SKMeansResult
+        最良のクラスタリング結果。
     """
     if rng is None:
         rng = np.random.default_rng()
