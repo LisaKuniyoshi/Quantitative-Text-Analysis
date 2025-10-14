@@ -13,7 +13,8 @@ dependencies = [
     "gensim~=4.3", 
     "breame~=0.1.2",
     "en-core-web-sm~=3.7",
-    "scikit-learn~=1.5"
+    "scikit-learn~=1.5",
+    "pdoc-15.0"
 ]
 
 [project.scripts]
