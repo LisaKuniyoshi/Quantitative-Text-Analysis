@@ -161,7 +161,12 @@ Quantitative-Text-Analysis/
 │       │   ├── normalize.py        # トークン正規化
 │       │   └── perdoc.py           # 文書ごとの処理
 │       ├── features/                # 特徴量計算
+│       │   ├── embeddings.py       # Truncated SVD (Singular Value Decomposition) 埋め込み
+│       │   ├── frequency.py        # TF (term frequency) 計算
+│       │   └── ppmi.py             # PPMI (Positive Pointwise Mutual Information) 計算
 │       ├── cluster/                 # クラスタリング実装
+│       │   ├── algorithms.py       # L2正規化、spherical k-means
+│       │   └── metrics.py          # クラスタごとの上位語抽出、安定性計算、文書ごとのクラスタ比率計算。
 │       ├── io/                      # 入出力処理
 │       │   ├── loader.py           # データ読み込み
 │       │   └── writers.py          # 結果書き出し
