@@ -27,10 +27,8 @@ class SpacyBackend:
     def __init__(self, model: str) -> None:
         """spaCy モデルを読み込む。
 
-        Parameters
-        ----------
-        model : str
-            読み込む spaCy モデル名。
+        Args:
+            model (str): 読み込む spaCy モデル名。
         """
         self._nlp = spacy.load(model)
         self.model_name: str = model
@@ -38,15 +36,11 @@ class SpacyBackend:
     def pipe(self, texts: Iterable[str]) -> Iterator[DocLike]:
         """spaCy の逐次パイプラインで文書を解析する。
 
-        Parameters
-        ----------
-        texts : Iterable[str]
-            解析対象のテキスト列。
+        Args:
+            texts (Iterable[str]): 解析対象のテキスト列。
 
-        Returns
-        -------
-        Iterator[DocLike]
-            spaCy 互換のドキュメントイテレータ。
+        Returns:
+            Iterator[DocLike]: spaCy 互換のドキュメントイテレータ。
         """
         for doc in self._nlp.pipe(texts):
             yield _SpacyDocAdapter(doc)

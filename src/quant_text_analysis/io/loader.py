@@ -7,17 +7,12 @@ from ..data_types import Columns
 def load_df(csv_path: str, columns: Columns) -> pd.DataFrame:
     """研究用データセットを読み込み、必要列を抽出する。
 
-    Parameters
-    ----------
-    csv_path : str
-        入力 CSV ファイルのパス。
-    columns : Columns
-        取得対象となる列名設定。
+    Args:
+        csv_path (str): 入力 CSV ファイルのパス。
+        columns (Columns): 取得対象となる列名設定。
 
-    Returns
-    -------
-    pandas.DataFrame
-        列名を標準化した DataFrame。
+    Returns:
+        pandas.DataFrame: 列名を標準化した DataFrame。
     """
     df: pd.DataFrame = pd.read_csv(csv_path)
     out = df[[columns.abstract, columns.year, columns.manual_tags]].copy()

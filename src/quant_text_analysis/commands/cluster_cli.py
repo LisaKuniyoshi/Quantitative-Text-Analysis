@@ -54,15 +54,10 @@ from ..features.embeddings import get_or_svd_embedding
 def main() -> None:
     """Run the full clustering pipeline.
 
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    - 乱数 : `Settings.random_seed` に従います。
-    - キャッシュ : per-doc頻度・PPMI・SVDはキャッシュを利用する実装です。
-    - 本関数は標準出力へのサマリ表示と、上記ファイル群の書き出しを行います。
+    Notes:
+        - 乱数は `Settings.random_seed` に従う。
+        - キャッシュは per-doc 頻度・PPMI・SVD で利用される。
+        - 標準出力にサマリを表示し、語彙やクラスタリング結果をファイル出力する。
     """
     s = Settings()
     rng = default_rng(s.random_seed)

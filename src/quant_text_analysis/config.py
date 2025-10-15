@@ -4,20 +4,16 @@ from .data_types import TokenPolicy, Columns
 def default_columns() -> Columns:
     """既定の列名設定を返す。
 
-    Returns
-    -------
-    Columns
-        既定の列名設定を表す `Columns` インスタンス。
+    Returns:
+        Columns: 既定の列名設定を表す `Columns` インスタンス。
     """
     return Columns()
 
 def default_token_policy() -> TokenPolicy:
     """既定のトークン正規化ポリシーを返す。
 
-    Returns
-    -------
-    TokenPolicy
-        既定のトークン正規化ポリシーを表す `TokenPolicy` インスタンス。
+    Returns:
+        TokenPolicy: 既定のトークン正規化ポリシーを表す `TokenPolicy` インスタンス。
     """
     forced = (
         ("autistic", "trait"),

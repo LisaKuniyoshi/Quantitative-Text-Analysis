@@ -67,21 +67,14 @@ def train_phrases(
 ) -> Phrases:
     """Phrases モデルを学習して返す。
 
-    Parameters
-    ----------
-    corpus : Sequence[Sequence[str]]
-        学習対象のトークン化済み文書群。
-    min_count : int
-        フレーズ抽出の最小出現回数。
-    threshold : float
-        スコア閾値。
-    connector_words : Iterable[str]
-        接続語として扱う語集合。
+    Args:
+        corpus (Sequence[Sequence[str]]): 学習対象のトークン化済み文書群。
+        min_count (int): フレーズ抽出の最小出現回数。
+        threshold (float): スコア閾値。
+        connector_words (Iterable[str]): 接続語として扱う語集合。
 
-    Returns
-    -------
-    gensim.models.phrases.Phrases
-        学習済みモデル。
+    Returns:
+        gensim.models.phrases.Phrases: 学習済みモデル。
     """
     # gensim 4.3.x では common_terms ではなく connector_words を使用
     model = Phrases(
@@ -96,15 +89,11 @@ def train_phrases(
 def phrase_df_from_model(model: Phrases) -> pd.DataFrame:
     """Phrases モデルから候補フレーズを抽出する。
 
-    Parameters
-    ----------
-    model : gensim.models.phrases.Phrases
-        評価対象の Phrases モデル。
+    Args:
+        model (gensim.models.phrases.Phrases): 評価対象の Phrases モデル。
 
-    Returns
-    -------
-    pandas.DataFrame
-        フレーズ・語数・スコアの一覧。
+    Returns:
+        pandas.DataFrame: フレーズ・語数・スコアの一覧。
     """
     phrases: Dict[str, float] = model.export_phrases()  # type: ignore[attr-defined]
     if not phrases:
@@ -120,6 +109,15 @@ def count_phrase_usage(
     tokenized: Sequence[Sequence[str]],
     joiner: str = "_",
 ) -> pd.DataFrame:
+    """トークン列から抽出フレーズの出現統計を集計する。
+
+    Args:
+        tokenized (Sequence[Sequence[str]]): トークン化済み文書群。
+        joiner (str): フレーズ結合子。
+
+    Returns:
+        pandas.DataFrame: フレーズごとの使用統計。
+    """
     from collections import Counter
     total_cnt: Counter[str] = Counter()
     doc_cnt: Counter[str] = Counter()
@@ -146,14 +144,9 @@ def count_phrase_usage(
 def main() -> None:
     """Train bigram/trigram models and export candidate phrases.
 
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    - bi→triの順に適用し、モデルの `export_phrases()` と実使用回数をマージします。
-    - 上位候補は標準出力に表示し、全結果を CSV に保存します。
+    Notes:
+        - bi→tri の順に適用し、モデルの `export_phrases()` と実使用回数をマージする。
+        - 上位候補は標準出力に表示し、全結果を CSV に保存する。
     """
     settings.ensure_out_dir()
 

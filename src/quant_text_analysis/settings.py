@@ -21,38 +21,22 @@ CSV_PATH: Path = RAW_DIR / "エクスポートされたアイテム.csv"
 class Settings:
     """プロジェクト全体の設定値を保持する不変データクラス。
 
-    Attributes
-    ----------
-    project_root : Path
-        プロジェクトルートディレクトリ。
-    data_dir : Path
-        データフォルダへのパス。
-    raw_dir : Path
-        生データ格納先のパス。
-    cache_dir : Path
-        中間生成物を保存するキャッシュディレクトリ。
-    out_dir : Path
-        出力ディレクトリのルート。
-    csv_path : Path
-        入力 CSV ファイルのパス。
-    spacy_model : str
-        利用する spaCy モデル名。
-    top_n : int
-        語彙選定時に保持する上位語数。
-    min_docs : int
-        語彙選定時の最小文書出現数。
-    svd_dim : int
-        SVD における埋め込み次元。
-    k_list : Tuple[int, ...]
-        評価するクラスタ数の候補。
-    n_init : int
-        k-means の初期化回数。
-    max_iter : int
-        k-means の最大反復回数。
-    random_seed : int
-        乱数シード値。
-    top_words_per_cluster : int
-        クラスタごとの上位語数。
+    Attributes:
+        project_root (Path): プロジェクトルートディレクトリ。
+        data_dir (Path): データフォルダへのパス。
+        raw_dir (Path): 生データ格納先のパス。
+        cache_dir (Path): 中間生成物を保存するキャッシュディレクトリ。
+        out_dir (Path): 出力ディレクトリのルート。
+        csv_path (Path): 入力 CSV ファイルのパス。
+        spacy_model (str): 利用する spaCy モデル名。
+        top_n (int): 語彙選定時に保持する上位語数。
+        min_docs (int): 語彙選定時の最小文書出現数。
+        svd_dim (int): SVD における埋め込み次元。
+        k_list (Tuple[int, ...]): 評価するクラスタ数の候補。
+        n_init (int): k-means の初期化回数。
+        max_iter (int): k-means の最大反復回数。
+        random_seed (int): 乱数シード値。
+        top_words_per_cluster (int): クラスタごとの上位語数。
     """
 
     # パス

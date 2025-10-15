@@ -6,15 +6,11 @@ from ..data_types import TokenPolicy, Normalizer, TokenLike
 def build_normalizer(policy: TokenPolicy) -> Normalizer:
     """ポリシーに基づくトークン正規化関数を構築する。
 
-    Parameters
-    ----------
-    policy : TokenPolicy
-        品詞・固有表現・表層保持などの条件を含む設定。
+    Args:
+        policy (TokenPolicy): 品詞・固有表現・表層保持などの条件を含む設定。
 
-    Returns
-    -------
-    Normalizer
-        spaCy トークンを受け取り正規化語を返す関数。
+    Returns:
+        Normalizer: spaCy トークンを受け取り正規化語を返す関数。
     """
     pat = re.compile(policy.alpha_regex).match
 

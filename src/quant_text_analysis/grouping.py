@@ -5,15 +5,11 @@ import pandas as pd
 def period_group_year(y: Optional[int]) -> Optional[str]:
     """発行年から集計用の期間ラベルを生成する。
 
-    Parameters
-    ----------
-    y : Optional[int]
-        発行年。NaN もしくは None の場合は未分類とみなす。
+    Args:
+        y (int | None): 発行年。NaN もしくは None の場合は未分類とみなす。
 
-    Returns
-    -------
-    Optional[str]
-        期間ラベル。該当しない場合は None。
+    Returns:
+        str | None: 期間ラベル。該当しない場合は None。
     """
     if y is None or pd.isna(y):
         return None
@@ -29,15 +25,11 @@ def period_group_year(y: Optional[int]) -> Optional[str]:
 def method_group(tags: Optional[str]) -> Optional[str]:
     """手動タグから研究手法カテゴリを推定する。
 
-    Parameters
-    ----------
-    tags : Optional[str]
-        セミコロン区切りの手法タグ文字列。
+    Args:
+        tags (str | None): セミコロン区切りの手法タグ文字列。
 
-    Returns
-    -------
-    Optional[str]
-        推定されたカテゴリ。該当しない場合は None。
+    Returns:
+        str | None: 推定されたカテゴリ。該当しない場合は None。
     """
     if tags is None:
         return None

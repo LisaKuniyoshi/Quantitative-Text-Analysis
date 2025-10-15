@@ -22,20 +22,13 @@ s = Settings()
 class PPMIOutputs:
     """PPMI 計算から得られる主要な成果物を保持するデータクラス。
 
-    Attributes
-    ----------
-    vocab : List[str]
-        語彙リスト（行順）。
-    doc_ids : List[int]
-        文書 ID のリスト。
-    X_tf : scipy.sparse.csr_matrix
-        文書×語の正規化 TF 行列。
-    ppmi_word_doc : scipy.sparse.csr_matrix
-        語×文書の非対称 PPMI 行列。
-    ppmi_word_word : scipy.sparse.csr_matrix
-        語×語の対称 PPMI 行列。
-    cache_key : Optional[str]
-        キャッシュ識別子。未設定時は None。
+    Attributes:
+        vocab (list[str]): 語彙リスト（行順）。
+        doc_ids (list[int]): 文書 ID のリスト。
+        X_tf (scipy.sparse.csr_matrix): 文書×語の正規化 TF 行列。
+        ppmi_word_doc (scipy.sparse.csr_matrix): 語×文書の非対称 PPMI 行列。
+        ppmi_word_word (scipy.sparse.csr_matrix): 語×語の対称 PPMI 行列。
+        cache_key (str | None): キャッシュ識別子。未設定時は None。
     """
     vocab: List[str]                 # 行=語の順序
     doc_ids: List[int]               # 0..D-1
@@ -86,9 +79,14 @@ def _compute_marginals_fullspace(
     per_doc_freqs: List[Dict[str, float]],
     vocab: Sequence[str],
 ) -> Tuple[np.ndarray, int]:
-    """
-    s_w[i] = ∑_d x_full[d, i] を語彙制限前の空間で計算（語が文書に無ければ0）。
-    T = D（各文書の行和=1 なので、総量は文書数）
+    """語彙制限前空間で語ごとの周辺量を計算する。
+
+    Args:
+        per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度。
+        vocab (Sequence[str]): 語彙リスト。
+
+    Returns:
+        tuple[numpy.ndarray, int]: 語の周辺量ベクトルと文書数。
     """
     D = len(per_doc_freqs)
     V = len(vocab)
@@ -187,7 +185,14 @@ def _hash_for_cache(obj: object) -> str:
     return hashlib.sha256(s).hexdigest()[:16]
 
 def _hash_per_doc_freqs(per_doc_freqs: List[Dict[str, float]]) -> str:
-    """per_doc_freqs から軽量ダイジェストを生成（全トークン走査）。"""
+    """per_doc_freqs から軽量ダイジェストを生成する。
+
+    Args:
+        per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度。
+
+    Returns:
+        str: 16 文字のハッシュ値。
+    """
     h = hashlib.sha256()
     h.update(f"D={len(per_doc_freqs)};".encode("utf-8"))
     for freq in per_doc_freqs:
@@ -203,15 +208,11 @@ def get_or_compute_ppmi(
 ) -> PPMIOutputs:
     """per-doc 頻度から PPMI を計算しキャッシュを活用して返す。
 
-    Parameters
-    ----------
-    per_doc_freqs : List[Dict[str, float]]
-        文書ごとの語相対頻度分布。
+    Args:
+        per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度分布。
 
-    Returns
-    -------
-    PPMIOutputs
-        語彙・TF 行列・PPMI 行列のセット。キャッシュ利用時は `cache_key` を含む。
+    Returns:
+        PPMIOutputs: 語彙・TF 行列・PPMI 行列のセット。キャッシュ利用時は `cache_key` を含む。
     """
     source_meta = {"source": "per_doc_freqs", "digest": _hash_per_doc_freqs(per_doc_freqs)}
     base_key = source_meta["digest"]

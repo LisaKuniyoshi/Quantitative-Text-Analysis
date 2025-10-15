@@ -52,21 +52,14 @@ def analyze_docs(
 ) -> Tuple[List[DocResult], List[Dict[str, float]]]:
     """文書群を解析し正規化トークン列と文書内相対頻度を求める。
 
-    Parameters
-    ----------
-    backend : NLPBackend
-        トークン化・解析を行う NLP バックエンド。
-    normalizer : Normalizer
-        トークン正規化関数。
-    texts : Sequence[str]
-        解析対象の文書本文。
-    policy : TokenPolicy
-        強制抽出やフィルタ条件を定義するポリシー。
+    Args:
+        backend (NLPBackend): トークン化・解析を行う NLP バックエンド。
+        normalizer (Normalizer): トークン正規化関数。
+        texts (Sequence[str]): 解析対象の文書本文。
+        policy (TokenPolicy): 強制抽出やフィルタ条件を定義するポリシー。
 
-    Returns
-    -------
-    Tuple[List[DocResult], List[Dict[str, float]]]
-        文書ごとの解析結果と語の相対頻度分布。
+    Returns:
+        tuple[list[DocResult], list[dict[str, float]]]: 文書ごとの解析結果と語の相対頻度分布。
     """
     forced_index = _build_forced_index(policy)
     keys_by_len: List[Tuple[Tuple[str, ...], str]] = sorted(
@@ -181,23 +174,15 @@ def get_or_analyze_docs(
 ) -> Tuple[List[DocResult], List[Dict[str, float]]]:
     """文書解析結果をキャッシュから取得または新規生成する。
 
-    Parameters
-    ----------
-    backend : NLPBackend
-        解析に用いる NLP バックエンド。
-    normalizer : Normalizer
-        トークン正規化関数。
-    texts : List[str]
-        解析対象文書。
-    policy : TokenPolicy
-        正規化ポリシー。
-    cache_dir : Optional[str], default None
-        キャッシュの保存先ディレクトリ。None の場合はキャッシュを使用しない。
+    Args:
+        backend (NLPBackend): 解析に用いる NLP バックエンド。
+        normalizer (Normalizer): トークン正規化関数。
+        texts (list[str]): 解析対象文書。
+        policy (TokenPolicy): 正規化ポリシー。
+        cache_dir (str | None): キャッシュ保存先。None の場合はキャッシュ未使用。
 
-    Returns
-    -------
-    Tuple[List[DocResult], List[Dict[str, float]]]
-        文書ごとの解析結果と語の相対頻度分布。
+    Returns:
+        tuple[list[DocResult], list[dict[str, float]]]: 文書ごとの解析結果と語の相対頻度分布。
     """
     if cache_dir is None:
         return analyze_docs(backend, normalizer, texts, policy)

@@ -46,14 +46,9 @@ policy = s.token_policy
 def main() -> None:
     """Compute and print frequency rankings; optionally write CSV files.
 
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    - 文書ごとの相対頻度を平均化し、`Settings.top_n`, `Settings.min_docs`でフィルタします。
-    - `Settings.out_dir` が設定されている場合にCSVを書き出します。
+    Notes:
+        - 文書ごとの相対頻度を平均化し、`Settings.top_n` と `Settings.min_docs` でフィルタする。
+        - `Settings.out_dir` が設定されている場合に CSV を書き出す。
     """
     df = load_df(str(s.csv_path), cols)
     df["period"] = df["year"].map(period_group_year)
