@@ -1,32 +1,29 @@
 """Word clustering pipeline (PPMI → SVD → spherical k-means).
 
-概要
-----
-既定の設定 (`Settings`) に基づき、要旨コーパスから語×文書PPMIを計算し、
-SVDによる語埋め込みをL2正規化して球面k-meansでクラスタリングします。
-語彙・PPMI行列・クラスタ結果と各種メトリクスを出力します。
+概要:
+    既定の設定 (`Settings`) に基づき、要旨コーパスから語×文書 PPMI を計算し、
+    SVD による語埋め込みを L2 正規化して球面 k-means でクラスタリングします。
+    語彙・PPMI 行列・クラスタ結果と各種メトリクスを出力します。
 
-I/O
----
-Reads
-    - CSV: Settings.csv_path に指定された書誌CSV（要旨・年・手作業タグ列）
-Writes
-    - outputs/vocab.json
-    - outputs/PPMI_word_doc_VxD.npz, outputs/PPMI_word_word_VxV.npz
-    - outputs/top_terms_k{K}.csv, outputs/labels_k{K}.csv
-    - outputs/metrics_k{K}.json, outputs/abstract_ratio_k{K}.npy
+I/O:
+    読み込み:
+        - CSV: Settings.csv_path に指定された書誌 CSV（要旨・年・手作業タグ列）
+    書き込み:
+        - outputs/vocab.json
+        - outputs/PPMI_word_doc_VxD.npz
+        - outputs/PPMI_word_word_VxV.npz
+        - outputs/top_terms_k{K}.csv
+        - outputs/labels_k{K}.csv
+        - outputs/metrics_k{K}.json
+        - outputs/abstract_ratio_k{K}.npy
 
-Configuration
--------------
-- すべて `Settings` で指定（パス、`k_list`, `svd_dim`, `random_seed` など）。
-- 形態素解析は spaCy（`spacy_model`）。per-doc頻度はキャッシュ可能。
+設定:
+    すべて `Settings` で指定します（パス、`k_list`, `svd_dim`, `random_seed` など）。
+    形態素解析は spaCy（`spacy_model`）を使用し、文書ごとの頻度はキャッシュ可能です。
 
-Examples
---------
->>> # パッケージとして実行
->>> python -m quant_text_analysis.cluster.app
->>> # もしくはスクリプトとして
->>> python path/to/cluster_cli.py
+使用例:
+    >>> python -m quant_text_analysis.cluster.app
+    >>> python path/to/cluster_cli.py
 """
 from __future__ import annotations
 from typing import List
@@ -52,12 +49,12 @@ from ..io.writers import (
 from ..features.embeddings import get_or_svd_embedding
 
 def main() -> None:
-    """Run the full clustering pipeline.
+    """クラスタリングパイプライン全体を実行します。
 
-    Notes:
-        - 乱数は `Settings.random_seed` に従う。
-        - キャッシュは per-doc 頻度・PPMI・SVD で利用される。
-        - 標準出力にサマリを表示し、語彙やクラスタリング結果をファイル出力する。
+    注意事項:
+        * 乱数は `Settings.random_seed` に従います。
+        * キャッシュは文書頻度・PPMI・SVD の計算で利用されます。
+        * 語彙やクラスタリング結果は標準出力とファイルに出力されます。
     """
     s = Settings()
     rng = default_rng(s.random_seed)

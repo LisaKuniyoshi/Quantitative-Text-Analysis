@@ -1,30 +1,25 @@
 """Token frequency rankings for overall and predefined groups.
 
-概要
-----
-`Settings`に基づいてCSVを読み込み、文書内相対頻度 r(d,w) を平均化して
-上位語を算出します。全体・年代・研究手法のランキングを表示し、
-指定があればCSVに保存します。
+概要:
+    `Settings` に基づいて CSV を読み込み、文書内相対頻度 r(d, w) を平均化して
+    上位語を算出します。全体・年代・研究手法のランキングを表示し、必要に応じて
+    CSV に保存します。
 
-I/O
----
-Reads
-    - CSV: Settings.csv_path
-Writes
-    - outputs/top_words_overall.csv
-    - outputs/top_words_period_{グループ名}.csv
-    - outputs/top_words_method_{グループ名}.csv
+I/O:
+    読み込み:
+        - CSV: Settings.csv_path
+    書き込み:
+        - outputs/top_words_overall.csv
+        - outputs/top_words_period_{グループ名}.csv
+        - outputs/top_words_method_{グループ名}.csv
 
-Grouping
---------
-- 年代 : "2014–2021" / "2022–2023" / "2024–2025"
-- 手法 : "qual" / "quan" / "theoretic" / "review" / "other"
+グルーピング:
+    - 年代: "2014–2021" / "2022–2023" / "2024–2025"
+    - 手法: "qual" / "quan" / "theoretic" / "review" / "other"
 
-Examples
---------
->>> python -m quant_text_analysis.cli
->>> # or
->>> python path/to/freq_cli.py
+使用例:
+    python -m quant_text_analysis.cli
+    python path/to/freq_cli.py
 """
 from __future__ import annotations
 
@@ -44,7 +39,7 @@ policy = s.token_policy
 
 # ---- 実行本体 ---------------------------------------------------------------
 def main() -> None:
-    """Compute and print frequency rankings; optionally write CSV files.
+    """頻度ランキングを計算して表示し、必要に応じて保存します。
 
     Notes:
         - 文書ごとの相対頻度を平均化し、`Settings.top_n` と `Settings.min_docs` でフィルタする。

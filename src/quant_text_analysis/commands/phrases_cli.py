@@ -1,28 +1,23 @@
 """Phrase mining with Gensim Phrases (bigrams/trigrams).
 
-概要
-----
-英字トークン化と英米表記統一（breame）を行い、Gensim Phrasesで
-bigram/trigramを学習します。モデル由来スコアと実コーパスでの使用統計を
-結合し、スコア・出現数・文書率などの指標をCSVに保存します。
+概要:
+    英字のみのトークン化と英米表記統一を行い、Gensim Phrases で bigram と
+    trigram を学習します。モデルのスコアとコーパスでの使用統計を結合し、
+    スコア・出現数・文書率などの指標を CSV に保存します。
 
-I/O
----
-Reads
-    - CSV: Settings.csv_path（要旨列）
-Writes
-    - outputs/phrases_gensim.csv
+I/O:
+    読み込み:
+        - CSV: Settings.csv_path（要旨列）
+    書き込み:
+        - outputs/phrases_gensim.csv
 
-Notes
------
-- Phrases学習は `ENGLISH_CONNECTOR_WORDS` を接続語として用います。
-- 表記統一に `breame.spelling.get_american_spelling` を使用します。
+注意事項:
+    - Phrases 学習では `ENGLISH_CONNECTOR_WORDS` を接続語として使用します。
+    - 表記統一に `breame.spelling.get_american_spelling` を利用します。
 
-Examples
---------
->>> python -m quant_text_analysis.phrase_discovery
->>> # or
->>> python path/to/phrases_cli.py
+使用例:
+    python -m quant_text_analysis.phrase_discovery
+    python path/to/phrases_cli.py
 """
 from __future__ import annotations
 
@@ -70,11 +65,11 @@ def train_phrases(
     Args:
         corpus (Sequence[Sequence[str]]): 学習対象のトークン化済み文書群。
         min_count (int): フレーズ抽出の最小出現回数。
-        threshold (float): スコア閾値。
-        connector_words (Iterable[str]): 接続語として扱う語集合。
+        threshold (float): フレーズ候補を採用するスコア閾値。
+        connector_words (Iterable[str]): 接続語として扱う語の集合。
 
     Returns:
-        gensim.models.phrases.Phrases: 学習済みモデル。
+        Phrases: 学習済みの Phrases モデル。
     """
     # gensim 4.3.x では common_terms ではなく connector_words を使用
     model = Phrases(
@@ -90,10 +85,10 @@ def phrase_df_from_model(model: Phrases) -> pd.DataFrame:
     """Phrases モデルから候補フレーズを抽出する。
 
     Args:
-        model (gensim.models.phrases.Phrases): 評価対象の Phrases モデル。
+        model (Phrases): 評価対象の Phrases モデル。
 
     Returns:
-        pandas.DataFrame: フレーズ・語数・スコアの一覧。
+        pandas.DataFrame: フレーズ、語数、スコアの一覧。
     """
     phrases: Dict[str, float] = model.export_phrases()  # type: ignore[attr-defined]
     if not phrases:
@@ -113,10 +108,10 @@ def count_phrase_usage(
 
     Args:
         tokenized (Sequence[Sequence[str]]): トークン化済み文書群。
-        joiner (str): フレーズ結合子。
+        joiner (str): フレーズを結合する際の区切り文字。
 
     Returns:
-        pandas.DataFrame: フレーズごとの使用統計。
+        pandas.DataFrame: フレーズごとの出現回数・文書数・文書率。
     """
     from collections import Counter
     total_cnt: Counter[str] = Counter()
@@ -142,7 +137,7 @@ def count_phrase_usage(
 
 # ---- 実行本体 ----
 def main() -> None:
-    """Train bigram/trigram models and export candidate phrases.
+    """bigram と trigram の候補を学習し、統計を出力します。
 
     Notes:
         - bi→tri の順に適用し、モデルの `export_phrases()` と実使用回数をマージする。
