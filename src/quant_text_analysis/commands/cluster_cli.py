@@ -32,9 +32,10 @@ I/O:
 """
 from __future__ import annotations
 import csv
-from typing import List
+from typing import List, Literal
 
 from numpy.random import default_rng
+import scipy.sparse as sp
 from sklearn.metrics import silhouette_score
 
 from ..settings import Settings
@@ -81,7 +82,12 @@ def main() -> None:
     out_dir = s.ensure_out_dir()
     save_vocab(out_dir, ppmi_out.vocab)
 
-    for name, ppmi in [("PPMI_word_doc", ppmi_out.ppmi_word_doc), ("PPMI_word_word", ppmi_out.ppmi_word_word)]:
+    cluster_targets: tuple[tuple[Literal["word_doc", "word_word"], sp.csr_matrix], ...] = (
+        ("word_doc", ppmi_out.ppmi_word_doc),
+        ("word_word", ppmi_out.ppmi_word_word),
+    )
+
+    for name, ppmi in cluster_targets:
         out_dir_cluster = out_dir / name
         out_dir_cluster.mkdir(parents=True, exist_ok=True)
         metrics_rows = []
@@ -118,6 +124,7 @@ def main() -> None:
                     k=k,
                     svd_dim=d,
                     rng=rng,
+                    cooccurrence=name,
                     top_words_per_cluster=s.top_words_per_cluster,
                     max_iter=s.max_iter,
                 )

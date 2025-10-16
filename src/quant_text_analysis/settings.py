@@ -52,13 +52,14 @@ class Settings:
 
     # 語彙選定（PPMI 前段）
     top_n: int = 10_000
-    min_docs: int = 7
+    min_docs: int = 3
 
     # 埋め込み次元（非対称PPMI→SVD）
     svd_dim: int = 200
+    svd_dim_list: Tuple[int, ...] = (25,)
 
     # クラスタリング
-    k_list: Tuple[int, ...] = (12, 16, 20)
+    k_list: Tuple[int, ...] = (32,)
     n_init: int = 20
     max_iter: int = 300
     random_seed: int = 42

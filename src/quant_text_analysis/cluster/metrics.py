@@ -1,6 +1,6 @@
 # quant_text_analysis/cluster/metrics.py
 from __future__ import annotations
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Literal
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
 
@@ -54,6 +54,7 @@ def stability_top_terms_jaccard(
     k: int,
     svd_dim: int,
     rng: np.random.Generator,
+    cooccurrence: Literal["word_doc", "word_word"],
     top_words_per_cluster: int = 20,
     max_iter: int = 300
 ) -> float:
@@ -64,6 +65,7 @@ def stability_top_terms_jaccard(
         k (int): クラスタ数。
         svd_dim (int): SVD の潜在次元。
         rng (numpy.random.Generator): 乱数生成器。
+        cooccurrence (Literal["word_doc", "word_word"]): 使用する共起行列の種類を指定。'word_doc' は語-文書共起行列を、'word_word' は語-語共起行列を用いる。
         top_words_per_cluster (int): 各クラスタで抽出する上位語数。
         max_iter (int): spherical k-means の最大反復回数。
 
@@ -78,7 +80,7 @@ def stability_top_terms_jaccard(
     def build_word_space(doc_idx: List[int]) -> Tuple[List[str], np.ndarray]:
         sub = [per_doc_freqs[i] for i in doc_idx]
         out = get_or_compute_ppmi(sub)
-        X_wd = out.ppmi_word_doc  # (V, D)
+        X_wd = out.ppmi_word_doc if cooccurrence == "word_doc" else out.ppmi_word_word
         svd = TruncatedSVD(n_components=min(svd_dim, max(2, min(X_wd.shape) - 1)))
         Z = svd.fit_transform(X_wd)
         return out.vocab, l2_normalize_rows(Z)
