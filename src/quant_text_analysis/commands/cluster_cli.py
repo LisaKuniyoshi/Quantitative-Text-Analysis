@@ -11,9 +11,16 @@ I/O:
         - CSV: Settings.csv_path に指定された書誌 CSV（要旨・年・手作業タグ列）
     書き込み:
         - outputs/vocab.json
-        - outputs/PPMI_{ppmi}/labels_k{K}.csv
-        - outputs/PPMI_{ppmi}/metrics_k{K}.json
-        - outputs/PPMI_{ppmi}/abstract_ratio_k{K}.npy
+        - outputs/PPMI_word_doc/top_terms_k{K}.csv
+        - outputs/PPMI_word_doc/labels_k{K}.csv
+        - outputs/PPMI_word_doc/metrics_k{K}.json
+        - outputs/PPMI_word_doc/abstract_ratio_k{K}.npy
+        - outputs/PPMI_word_doc/metrics.csv
+        - outputs/PPMI_word_word/top_terms_k{K}.csv
+        - outputs/PPMI_word_word/labels_k{K}.csv
+        - outputs/PPMI_word_word/metrics_k{K}.json
+        - outputs/PPMI_word_word/abstract_ratio_k{K}.npy
+        - outputs/PPMI_word_word/metrics.csv
 
 設定:
     すべて `Settings` で指定します（パス、`k_list`, `svd_dim`, `random_seed` など）。
@@ -24,6 +31,7 @@ I/O:
     >>> python path/to/cluster_cli.py
 """
 from __future__ import annotations
+import csv
 from typing import List
 
 from numpy.random import default_rng
@@ -76,6 +84,7 @@ def main() -> None:
     for name, ppmi in [("PPMI_word_doc", ppmi_out.ppmi_word_doc), ("PPMI_word_word", ppmi_out.ppmi_word_word)]:
         out_dir_cluster = out_dir / name
         out_dir_cluster.mkdir(parents=True, exist_ok=True)
+        metrics_rows = []
 
         # 語埋め込み（非対称PPMI→SVD→L2 正規化）
         Z = get_or_svd_embedding(
@@ -111,10 +120,17 @@ def main() -> None:
                 max_iter=s.max_iter,
             )
             save_metrics(out_dir_cluster, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
+            metrics_rows.append({"k": int(k), "silhouette": sil, "stability_jaccard": stab})
 
             # 文書×クラスタ比率
             M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
             save_cluster_ratio(out_dir_cluster, k, M)
+
+        metrics_csv_path = out_dir_cluster / "metrics.csv"
+        with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["k", "silhouette", "stability_jaccard"])
+            writer.writeheader()
+            writer.writerows(metrics_rows)
 
     print("Clustering done.")
     print(f"- vocab size: {len(ppmi_out.vocab)}")
