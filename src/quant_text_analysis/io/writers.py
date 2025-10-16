@@ -22,18 +22,6 @@ def save_vocab(out_dir: Path, vocab: List[str]) -> None:
         encoding="utf-8"
     )
 
-def save_ppmi(out_dir: Path, ppmi_wd: sp.spmatrix, ppmi_ww: sp.spmatrix) -> None:
-    """PPMI 行列を NPZ 形式で保存する。
-
-    Args:
-        out_dir (Path): 出力先ディレクトリ。
-        ppmi_wd (scipy.sparse.spmatrix): 語×文書の PPMI 行列。
-        ppmi_ww (scipy.sparse.spmatrix): 語×語の PPMI 行列。
-    """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    sp.save_npz(out_dir / "PPMI_word_doc_VxD.npz", sp.csr_matrix(ppmi_wd))
-    sp.save_npz(out_dir / "PPMI_word_word_VxV.npz", sp.csr_matrix(ppmi_ww))
-
 def save_top_terms(
     out_dir: Path,
     k: int,

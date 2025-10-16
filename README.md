@@ -93,7 +93,7 @@ python -m quant_text_analysis phrases
 
 ### 3. 単語クラスタリング (cluster)
 
-語×文書PPMIを計算し、SVDによる語埋め込みを経て、球面k-meansでクラスタリングを実行します。
+語×文書PPMIと語×語PPMIを計算し、SVDによる語埋め込みを経て、球面k-meansでクラスタリングを実行します。
 
 ```bash
 python -m quant_text_analysis cluster

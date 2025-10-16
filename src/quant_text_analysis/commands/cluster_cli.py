@@ -1,7 +1,8 @@
 """Word clustering pipeline (PPMI → SVD → spherical k-means).
 
 概要:
-    既定の設定 (`Settings`) に基づき、要旨コーパスから語×文書 PPMI を計算し、
+    既定の設定 (`Settings`) に基づき、
+    要旨コーパスから語×文書 PPMI と語×語 PPMI を計算し、
     SVD による語埋め込みを L2 正規化して球面 k-means でクラスタリングします。
     語彙・PPMI 行列・クラスタ結果と各種メトリクスを出力します。
 
@@ -10,12 +11,9 @@ I/O:
         - CSV: Settings.csv_path に指定された書誌 CSV（要旨・年・手作業タグ列）
     書き込み:
         - outputs/vocab.json
-        - outputs/PPMI_word_doc_VxD.npz
-        - outputs/PPMI_word_word_VxV.npz
-        - outputs/top_terms_k{K}.csv
-        - outputs/labels_k{K}.csv
-        - outputs/metrics_k{K}.json
-        - outputs/abstract_ratio_k{K}.npy
+        - outputs/PPMI_{ppmi}/labels_k{K}.csv
+        - outputs/PPMI_{ppmi}/metrics_k{K}.json
+        - outputs/PPMI_{ppmi}/abstract_ratio_k{K}.npy
 
 設定:
     すべて `Settings` で指定します（パス、`k_list`, `svd_dim`, `random_seed` など）。
@@ -44,7 +42,7 @@ from ..cluster.metrics import (
     abstract_cluster_ratio,
 )
 from ..io.writers import (
-    save_vocab, save_ppmi, save_top_terms, save_labels, save_metrics, save_cluster_ratio
+    save_vocab, save_top_terms, save_labels, save_metrics, save_cluster_ratio
 )
 from ..features.embeddings import get_or_svd_embedding
 
@@ -74,47 +72,49 @@ def main() -> None:
     ppmi_out = get_or_compute_ppmi(per_doc_freqs)
     out_dir = s.ensure_out_dir()
     save_vocab(out_dir, ppmi_out.vocab)
-    save_ppmi(out_dir, ppmi_out.ppmi_word_doc, ppmi_out.ppmi_word_word)
 
-    # 語埋め込み（非対称PPMI→SVD→L2 正規化）
-    X_wd = ppmi_out.ppmi_word_doc  # (V, D)
-    Z = get_or_svd_embedding(
-        X_wd,
-        cfg=s,
-        ppmi_cache_key=ppmi_out.cache_key,
-        random_state=s.random_seed,
-    )
-    Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
+    for name, ppmi in [("PPMI_word_doc", ppmi_out.ppmi_word_doc), ("PPMI_word_word", ppmi_out.ppmi_word_word)]:
+        out_dir_cluster = out_dir / name
+        out_dir_cluster.mkdir(parents=True, exist_ok=True)
 
-    # k ごとにクラスタリング
-    for k in s.k_list:
-        res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
-        labels = res.labels_.astype(int)
-
-        # 上位語・ラベル保存
-        top = top_terms_by_centroid(Z, ppmi_out.vocab, res.centroids_, s.top_words_per_cluster)
-        save_top_terms(out_dir, k, top)
-        save_labels(out_dir, k, ppmi_out.vocab, labels)
-
-        # 指標
-        try:
-            sil = float(silhouette_score(Z, labels, metric="cosine"))
-        except Exception:
-            sil = float("nan")
-
-        stab = stability_top_terms_jaccard(
-            per_doc_freqs,
-            k=k,
-            svd_dim=s.svd_dim,
-            rng=rng,
-            top_words_per_cluster=s.top_words_per_cluster,
-            max_iter=s.max_iter,
+        # 語埋め込み（非対称PPMI→SVD→L2 正規化）
+        Z = get_or_svd_embedding(
+            ppmi,
+            cfg=s,
+            ppmi_cache_key=ppmi_out.cache_key,
+            random_state=s.random_seed,
         )
-        save_metrics(out_dir, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
+        Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
 
-        # 文書×クラスタ比率
-        M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
-        save_cluster_ratio(out_dir, k, M)
+        # k ごとにクラスタリング
+        for k in s.k_list:
+            res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
+            labels = res.labels_.astype(int)
+
+            # 上位語・ラベル保存
+            top = top_terms_by_centroid(Z, ppmi_out.vocab, res.centroids_, s.top_words_per_cluster)
+            save_top_terms(out_dir_cluster, k, top)
+            save_labels(out_dir_cluster, k, ppmi_out.vocab, labels)
+
+            # 指標
+            try:
+                sil = float(silhouette_score(Z, labels, metric="cosine"))
+            except Exception:
+                sil = float("nan")
+
+            stab = stability_top_terms_jaccard(
+                per_doc_freqs,
+                k=k,
+                svd_dim=s.svd_dim,
+                rng=rng,
+                top_words_per_cluster=s.top_words_per_cluster,
+                max_iter=s.max_iter,
+            )
+            save_metrics(out_dir_cluster, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
+
+            # 文書×クラスタ比率
+            M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
+            save_cluster_ratio(out_dir_cluster, k, M)
 
     print("Clustering done.")
     print(f"- vocab size: {len(ppmi_out.vocab)}")

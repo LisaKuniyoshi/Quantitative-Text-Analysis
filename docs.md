@@ -289,7 +289,8 @@ def abstract_cluster_ratio(per_doc_freqs: List[Dict[str, float]],
 Word clustering pipeline (PPMI → SVD → spherical k-means).
 
 概要:
-既定の設定 (`Settings`) に基づき、要旨コーパスから語×文書 PPMI を計算し、
+既定の設定 (`Settings`) に基づき、
+要旨コーパスから語×文書 PPMI と語×語 PPMI を計算し、
 SVD による語埋め込みを L2 正規化して球面 k-means でクラスタリングします。
 語彙・PPMI 行列・クラスタ結果と各種メトリクスを出力します。
 
