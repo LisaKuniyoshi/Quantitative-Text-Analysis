@@ -11,15 +11,15 @@ I/O:
         - CSV: Settings.csv_path に指定された書誌 CSV（要旨・年・手作業タグ列）
     書き込み:
         - outputs/vocab.json
-        - outputs/PPMI_word_doc/top_terms_k{K}.csv
-        - outputs/PPMI_word_doc/labels_k{K}.csv
-        - outputs/PPMI_word_doc/metrics_k{K}.json
-        - outputs/PPMI_word_doc/abstract_ratio_k{K}.npy
+        - outputs/PPMI_word_doc/svd_dim_{d}/top_terms_k{K}.csv
+        - outputs/PPMI_word_doc/svd_dim_{d}/labels_k{K}.csv
+        - outputs/PPMI_word_doc/svd_dim_{d}/metrics_k{K}.json
+        - outputs/PPMI_word_doc/svd_dim_{d}/abstract_ratio_k{K}.npy
         - outputs/PPMI_word_doc/metrics.csv
-        - outputs/PPMI_word_word/top_terms_k{K}.csv
-        - outputs/PPMI_word_word/labels_k{K}.csv
-        - outputs/PPMI_word_word/metrics_k{K}.json
-        - outputs/PPMI_word_word/abstract_ratio_k{K}.npy
+        - outputs/PPMI_word_word/svd_dim_{d}/top_terms_k{K}.csv
+        - outputs/PPMI_word_word/svd_dim_{d}/labels_k{K}.csv
+        - outputs/PPMI_word_word/svd_dim_{d}/metrics_k{K}.json
+        - outputs/PPMI_word_word/svd_dim_{d}/abstract_ratio_k{K}.npy
         - outputs/PPMI_word_word/metrics.csv
 
 設定:
@@ -93,6 +93,9 @@ def main() -> None:
         metrics_rows = []
 
         for d in s.svd_dim_list:
+            out_dir_dim = out_dir_cluster / f"svd_dim_{d}"
+            out_dir_dim.mkdir(parents=True, exist_ok=True)
+
             # 語埋め込み（非対称PPMI→SVD→L2 正規化）
             Z = get_or_svd_embedding(
                 ppmi,
@@ -110,8 +113,8 @@ def main() -> None:
 
                 # 上位語・ラベル保存
                 top = top_terms_by_centroid(Z, ppmi_out.vocab, res.centroids_, s.top_words_per_cluster)
-                save_top_terms(out_dir_cluster, k, top)
-                save_labels(out_dir_cluster, k, ppmi_out.vocab, labels)
+                save_top_terms(out_dir_dim, k, top)
+                save_labels(out_dir_dim, k, ppmi_out.vocab, labels)
 
                 # 指標
                 try:
@@ -128,12 +131,12 @@ def main() -> None:
                     top_words_per_cluster=s.top_words_per_cluster,
                     max_iter=s.max_iter,
                 )
-                save_metrics(out_dir_cluster, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
+                save_metrics(out_dir_dim, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
                 metrics_rows.append({"dim": d, "k": int(k), "silhouette": sil, "stability_jaccard": stab})
 
                 # 文書×クラスタ比率
                 M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
-                save_cluster_ratio(out_dir_cluster, k, M)
+                save_cluster_ratio(out_dir_dim, k, M)
 
         metrics_csv_path = out_dir_cluster / "metrics.csv"
         with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
