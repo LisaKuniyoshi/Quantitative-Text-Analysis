@@ -128,7 +128,7 @@ def main() -> None:
                     svd_dim=d,
                     rng=rng,
                     cooccurrence=name,
-                    top_words_per_cluster=s.top_words_per_cluster,
+                    top_words_per_cluster=len(ppmi_out.vocab) // (k * 3),
                     max_iter=s.max_iter,
                 )
                 save_metrics(out_dir_dim, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
