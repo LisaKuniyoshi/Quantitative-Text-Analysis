@@ -66,7 +66,7 @@ def get_or_svd_embedding(
 
     # キャッシュ不使用モード
     if s.cache_dir is None:
-        return _svd_embedding(X_wd, svd_dim, random_state=random_state or s.random_seed)
+        return _svd_embedding(X_wd, svd_dim, random_state=s.random_seed)
 
     meta = {
         "ppmi_key": ppmi_cache_key,
@@ -81,7 +81,7 @@ def get_or_svd_embedding(
     if os.path.exists(path):
         return np.load(path)
 
-    Z = _svd_embedding(X_wd, svd_dim, random_state=random_state or s.random_seed)
+    Z = _svd_embedding(X_wd, svd_dim, random_state=s.random_seed)
 
     os.makedirs(os.path.dirname(base), exist_ok=True)
     np.save(path, Z)
