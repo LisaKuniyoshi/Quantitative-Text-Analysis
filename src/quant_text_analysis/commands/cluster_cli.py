@@ -86,49 +86,51 @@ def main() -> None:
         out_dir_cluster.mkdir(parents=True, exist_ok=True)
         metrics_rows = []
 
-        # 語埋め込み（非対称PPMI→SVD→L2 正規化）
-        Z = get_or_svd_embedding(
-            ppmi,
-            cfg=s,
-            ppmi_cache_key=ppmi_out.cache_key,
-            random_state=s.random_seed,
-        )
-        Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
-
-        # k ごとにクラスタリング
-        for k in s.k_list:
-            res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
-            labels = res.labels_.astype(int)
-
-            # 上位語・ラベル保存
-            top = top_terms_by_centroid(Z, ppmi_out.vocab, res.centroids_, s.top_words_per_cluster)
-            save_top_terms(out_dir_cluster, k, top)
-            save_labels(out_dir_cluster, k, ppmi_out.vocab, labels)
-
-            # 指標
-            try:
-                sil = float(silhouette_score(Z, labels, metric="cosine"))
-            except Exception:
-                sil = float("nan")
-
-            stab = stability_top_terms_jaccard(
-                per_doc_freqs,
-                k=k,
-                svd_dim=s.svd_dim,
-                rng=rng,
-                top_words_per_cluster=s.top_words_per_cluster,
-                max_iter=s.max_iter,
+        for d in s.svd_dim_list:
+            # 語埋め込み（非対称PPMI→SVD→L2 正規化）
+            Z = get_or_svd_embedding(
+                ppmi,
+                svd_dim=d,
+                cfg=s,
+                ppmi_cache_key=ppmi_out.cache_key,
+                random_state=s.random_seed,
             )
-            save_metrics(out_dir_cluster, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
-            metrics_rows.append({"k": int(k), "silhouette": sil, "stability_jaccard": stab})
+            Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
 
-            # 文書×クラスタ比率
-            M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
-            save_cluster_ratio(out_dir_cluster, k, M)
+            # k ごとにクラスタリング
+            for k in s.k_list:
+                res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
+                labels = res.labels_.astype(int)
+
+                # 上位語・ラベル保存
+                top = top_terms_by_centroid(Z, ppmi_out.vocab, res.centroids_, s.top_words_per_cluster)
+                save_top_terms(out_dir_cluster, k, top)
+                save_labels(out_dir_cluster, k, ppmi_out.vocab, labels)
+
+                # 指標
+                try:
+                    sil = float(silhouette_score(Z, labels, metric="cosine"))
+                except Exception:
+                    sil = float("nan")
+
+                stab = stability_top_terms_jaccard(
+                    per_doc_freqs,
+                    k=k,
+                    svd_dim=d,
+                    rng=rng,
+                    top_words_per_cluster=s.top_words_per_cluster,
+                    max_iter=s.max_iter,
+                )
+                save_metrics(out_dir_cluster, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
+                metrics_rows.append({"dim": d, "k": int(k), "silhouette": sil, "stability_jaccard": stab})
+
+                # 文書×クラスタ比率
+                M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
+                save_cluster_ratio(out_dir_cluster, k, M)
 
         metrics_csv_path = out_dir_cluster / "metrics.csv"
         with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["k", "silhouette", "stability_jaccard"])
+            writer = csv.DictWriter(f, fieldnames=["dim", "k", "silhouette", "stability_jaccard"])
             writer.writeheader()
             writer.writerows(metrics_rows)
 

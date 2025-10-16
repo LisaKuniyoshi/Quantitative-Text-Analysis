@@ -45,6 +45,7 @@ def _svd_embedding(
 def get_or_svd_embedding(
     X_wd: ArrayLike,
     *,
+    svd_dim: int,
     cfg: Optional[Settings] = None,
     ppmi_cache_key: Optional[str] = None,
     random_state: Optional[int] = None,
@@ -53,6 +54,7 @@ def get_or_svd_embedding(
 
     Args:
         X_wd (ArrayLike): 語×文書の PPMI 行列。
+        svd_dim (int): 生成する埋め込み次元。
         cfg (Settings | None): 設定オブジェクト。None の場合は既定値を利用。
         ppmi_cache_key (str | None): PPMI 計算時のキャッシュキー。
         random_state (int | None): SVD の乱数シード。未指定時は設定値を使用。
@@ -64,11 +66,11 @@ def get_or_svd_embedding(
 
     # キャッシュ不使用モード
     if s.cache_dir is None:
-        return _svd_embedding(X_wd, s.svd_dim, random_state=random_state or s.random_seed)
+        return _svd_embedding(X_wd, svd_dim, random_state=random_state or s.random_seed)
 
     meta = {
         "ppmi_key": ppmi_cache_key,
-        "svd_dim": int(s.svd_dim),
+        "svd_dim": int(svd_dim),
         "shape": (int(X_wd.shape[0]), int(X_wd.shape[1])),
     }
     key = _hash_key(meta)
@@ -79,7 +81,7 @@ def get_or_svd_embedding(
     if os.path.exists(path):
         return np.load(path)
 
-    Z = _svd_embedding(X_wd, s.svd_dim, random_state=random_state or s.random_seed)
+    Z = _svd_embedding(X_wd, svd_dim, random_state=random_state or s.random_seed)
 
     os.makedirs(os.path.dirname(base), exist_ok=True)
     np.save(path, Z)
