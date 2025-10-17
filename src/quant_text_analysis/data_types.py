@@ -52,18 +52,6 @@ class RankingParams:
     top_n: int = 50
     min_docs: int = 1
 
-# 1文書の結果（不変）
-@dataclass(frozen=True)
-class DocResult:
-    """1 文書に対するトークン集計結果。
-
-    Attributes:
-        tokens (tuple[str, ...]): 文書内のトークン列。
-        total (int): トークン総数。
-    """
-    tokens: Tuple[str, ...]
-    total: int
-
 # ---- Protocols（外部実装の抽象化）----
 @runtime_checkable
 class TokenLike(Protocol):

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional
 import hashlib
 import json
 import math
@@ -10,9 +10,9 @@ import os
 
 import numpy as np
 import scipy.sparse as sp
+from sklearn.feature_extraction import DictVectorizer
 
 from ..settings import Settings
-from .frequency import frequency_rankings
 
 EPS: float = 1e-8  # 数値安定用（log のゼロ回避）
 
@@ -36,74 +36,6 @@ class PPMIOutputs:
     ppmi_word_doc: sp.csr_matrix     # V x D（非対称PPMI；行=語）
     ppmi_word_word: sp.csr_matrix    # V x V（対称PPMI；行=語）
     cache_key: Optional[str] = None  # キャッシュ識別子（省略可）
-
-# ----------------------------
-# 語彙選定（cli.py と同じ規則）
-# ----------------------------
-def _select_vocab_by_rankings(
-    per_doc_freqs: List[Dict[str, float]],
-    *,
-    top_n: int,
-    min_docs: int
-) -> List[str]:
-    df_all = frequency_rankings(per_doc_freqs, None, top_n=top_n, min_docs=min_docs)["ALL"]
-    # 想定カラム名: ["word", "mean_freq", "n_docs_nonzero", "doc_rate_nonzero"]
-    return df_all["word"].astype(str).tolist()
-
-# ----------------------------
-# 射影行列の構築（X: D x V）
-# ----------------------------
-def _build_projected_tf_matrix(
-    per_doc_freqs: List[Dict[str, float]],
-    vocab: Sequence[str],
-) -> sp.csr_matrix:
-    D = len(per_doc_freqs)
-    V = len(vocab)
-    index = {w: j for j, w in enumerate(vocab)}
-    rows: List[int] = []
-    cols: List[int] = []
-    data: List[float] = []
-    for d, freq in enumerate(per_doc_freqs):
-        if not freq:
-            continue
-        for w, r in freq.items():  # r は「語彙制限前」の正規化TF（c/total）
-            j = index.get(w)
-            if j is not None and r > 0.0:
-                rows.append(d); cols.append(j); data.append(float(r))
-    return sp.csr_matrix((data, (rows, cols)), shape=(D, V), dtype=np.float64)
-
-# ----------------------------
-# 語彙制限「前」の周辺量（不変性のための分母）
-# ----------------------------
-def _compute_marginals_fullspace(
-    per_doc_freqs: List[Dict[str, float]],
-    vocab: Sequence[str],
-) -> Tuple[np.ndarray, int]:
-    """語彙制限前空間で語ごとの周辺量を計算する。
-
-    Args:
-        per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度。
-        vocab (Sequence[str]): 語彙リスト。
-
-    Returns:
-        tuple[numpy.ndarray, int]: 語の周辺量ベクトルと文書数。
-    """
-    D = len(per_doc_freqs)
-    V = len(vocab)
-    s_w = np.zeros(V, dtype=np.float64)
-
-    index = {w: i for i, w in enumerate(vocab)}
-    for freq in per_doc_freqs:
-        if not freq:
-            continue
-        for w, r in freq.items():          # r は「語彙制限前」の正規化TF（c/total）
-            if r <= 0.0:
-                continue
-            j = index.get(w)
-            if j is not None:
-                s_w[j] += float(r)
-
-    return s_w, D
 
 # ----------------------------
 # 非対称 PPMI（語×要旨）
@@ -164,18 +96,48 @@ def _compute_ppmi_from_perdocfreqs(
     top_n: int,
     min_docs: int,
 ) -> PPMIOutputs:
-    vocab = _select_vocab_by_rankings(per_doc_freqs, top_n=top_n, min_docs=min_docs)
     doc_ids = list(range(len(per_doc_freqs)))
+    vec = DictVectorizer(dtype=np.float64, sparse=True, sort=False)
+    X_full = sp.csr_matrix(vec.fit_transform(per_doc_freqs), copy=False)
+    vocab_full = list(vec.get_feature_names_out())
 
-    # 語彙へ射影した X（D x V）と、語彙制限「前」の周辺（s_w）を分離して作る
-    X = _build_projected_tf_matrix(per_doc_freqs, vocab)  # D x V（各行は ≤1）
-    s_w, D_docs = _compute_marginals_fullspace(per_doc_freqs, vocab)  # s_w: V, T=D_docs
+    D_docs = len(per_doc_freqs)
+    if X_full.shape[1] == 0 or top_n <= 0:
+        empty_tf = sp.csr_matrix((D_docs, 0), dtype=np.float64)
+        empty_wd = sp.csr_matrix((0, D_docs), dtype=np.float64)
+        empty_ww = sp.csr_matrix((0, 0), dtype=np.float64)
+        return PPMIOutputs([], doc_ids, empty_tf, empty_wd, empty_ww)
+
+    doc_counts = np.asarray(X_full.getnnz(axis=0), dtype=np.int32)
+    if min_docs > 1:
+        mask = doc_counts >= min_docs
+    else:
+        mask = doc_counts > 0
+
+    candidate_idx = np.flatnonzero(mask)
+    if candidate_idx.size == 0:
+        empty_tf = sp.csr_matrix((D_docs, 0), dtype=np.float64)
+        empty_wd = sp.csr_matrix((0, D_docs), dtype=np.float64)
+        empty_ww = sp.csr_matrix((0, 0), dtype=np.float64)
+        return PPMIOutputs([], doc_ids, empty_tf, empty_wd, empty_ww)
+
+    mean_freq = np.asarray(X_full.mean(axis=0)).ravel()
+    order = np.lexsort((-doc_counts[candidate_idx], -mean_freq[candidate_idx]))
+    ordered_idx = candidate_idx[order]
+
+    if top_n < len(ordered_idx):
+        ordered_idx = ordered_idx[:top_n]
+
+    X = X_full[:, ordered_idx].tocsr()
+    vocab = [vocab_full[i] for i in ordered_idx]
+
+    s_w = np.asarray(X.sum(axis=0)).ravel()
 
     # 非対称・対称の PPMI（定義は元空間、分子のみ射影後）
-    ppmi_wd = _ppmi_word_doc_from_fullspace(X, s_w, D_docs)  # V x D
-    ppmi_ww = _ppmi_word_word_from_fullspace(X, s_w, D_docs) # V x V
+    ppmi_wd = _ppmi_word_doc_from_fullspace(X, s_w, D_docs)
+    ppmi_ww = _ppmi_word_word_from_fullspace(X, s_w, D_docs)
 
-    return PPMIOutputs(vocab, doc_ids, X.tocsr(), ppmi_wd.tocsr(), ppmi_ww.tocsr())
+    return PPMIOutputs(vocab, doc_ids, X, ppmi_wd.tocsr(), ppmi_ww.tocsr())
 
 # ----------------------------
 # キャッシュ付き入口（per-doc 前処理も含む）

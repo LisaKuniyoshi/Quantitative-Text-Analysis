@@ -42,7 +42,6 @@ def main() -> None:
     """頻度ランキングを計算して表示し、必要に応じて保存します。
 
     Notes:
-        - 文書ごとの相対頻度を平均化し、`Settings.top_n` と `Settings.min_docs` でフィルタする。
         - `Settings.out_dir` が設定されている場合に CSV を書き出す。
     """
     df = load_df(str(s.csv_path), cols)
@@ -53,13 +52,13 @@ def main() -> None:
     normalizer = build_normalizer(policy)
 
     abstracts: List[str] = df["abstract"].fillna("").tolist()
-    _, per_doc_freqs = get_or_analyze_docs(
+    per_doc_freqs = get_or_analyze_docs(
         backend, normalizer, abstracts, policy, cache_dir=str(s.cache_dir)
     )
 
-    overall = frequency_rankings(per_doc_freqs, None, top_n=s.top_n, min_docs=s.min_docs)
-    period = frequency_rankings(per_doc_freqs, df["period"].tolist(), top_n=s.top_n, min_docs=s.min_docs)
-    method = frequency_rankings(per_doc_freqs, df["method"].tolist(), top_n=s.top_n, min_docs=s.min_docs)
+    overall = frequency_rankings(per_doc_freqs, None)
+    period = frequency_rankings(per_doc_freqs, df["period"].tolist())
+    method = frequency_rankings(per_doc_freqs, df["method"].tolist())
 
     print(f"\n=== Overall (All documents) | Top {len(overall['ALL'])} ===")
     print(overall["ALL"].to_string(index=False))

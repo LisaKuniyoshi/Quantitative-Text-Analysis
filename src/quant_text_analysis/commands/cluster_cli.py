@@ -73,7 +73,7 @@ def main() -> None:
     # 形態素＋正規化（キャッシュ利用）
     backend = SpacyBackend(model=s.spacy_model)
     normalizer = build_normalizer(s.token_policy)
-    _, per_doc_freqs = get_or_analyze_docs(
+    per_doc_freqs = get_or_analyze_docs(
         backend, normalizer, texts, s.token_policy, cache_dir=str(s.cache_dir)
     )
 

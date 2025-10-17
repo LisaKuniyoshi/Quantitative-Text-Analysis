@@ -1,63 +1,75 @@
 from __future__ import annotations
-from typing import Dict, List, Optional, Set, Tuple
+
+from typing import Dict, List, Optional
+
+import numpy as np
 import pandas as pd
+import scipy.sparse as sp
+from sklearn.feature_extraction import DictVectorizer
+
+EMPTY_COLUMNS = ["word", "mean_freq", "n_docs_nonzero", "doc_rate_nonzero"]
+
+
+def _empty_df() -> pd.DataFrame:
+    return pd.DataFrame(columns=EMPTY_COLUMNS)
+
 
 # r(d,w) のグループ集計（純粋関数）
 
 def frequency_rankings(
     per_doc_freqs: List[Dict[str, float]],
     groups: Optional[List[Optional[str]]] = None,
-    *,
-    top_n: int,
-    min_docs: int,
 ) -> Dict[str, pd.DataFrame]:
     """語相対頻度をグループ別に集計しランキングを生成する。
 
     Args:
         per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度分布。
         groups (list[str | None] | None): 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
-        top_n (int): グループごとに保持する語数。
-        min_docs (int): 採用するために必要な最小出現文書数。
 
     Returns:
         dict[str, pandas.DataFrame]: グループ ID をキーに持つランキング表。
     """
-    n_docs = len(per_doc_freqs)
+    n_docs: int = len(per_doc_freqs)
+
+    vec: DictVectorizer = DictVectorizer(dtype=np.float64, sparse=True, sort=False)
+    X: sp.csr_matrix = sp.csr_matrix(vec.fit_transform(per_doc_freqs), copy=False)
+    feature_names: np.ndarray = np.asarray(vec.get_feature_names_out(), dtype=str)
+
     gvec: List[str] = ["ALL"] * n_docs if groups is None else [g or "__NULL__" for g in groups]
 
-    # グループ→文書インデックス
     group_docs: Dict[str, List[int]] = {}
     for i, g in enumerate(gvec):
         if g == "__NULL__":
             continue
         group_docs.setdefault(g, []).append(i)
 
-    # 語彙集合
-    vocab: Set[str] = set()
-    for fd in per_doc_freqs:
-        vocab.update(fd.keys())
-
     out: Dict[str, pd.DataFrame] = {}
     for g, idxs in group_docs.items():
-        rows: List[Tuple[str, float, int, float]] = []
-        n_g = len(idxs)
-        for w in vocab:
-            s = 0.0
-            nz = 0
-            for i in idxs:
-                r = per_doc_freqs[i].get(w, 0.0)
-                s += r
-                if r > 0.0:
-                    nz += 1
-            if nz < min_docs:
-                continue
-            mean = s / float(n_g)
-            rows.append((w, mean, nz, nz / float(n_g)))
-        df = (
-            pd.DataFrame(rows, columns=["word", "mean_freq", "n_docs_nonzero", "doc_rate_nonzero"])  # type: ignore[reportUnknownMemberType]
-            .sort_values(["mean_freq", "n_docs_nonzero"], ascending=[False, False], kind="mergesort")  # type: ignore[reportUnknownMemberType]
-            .head(top_n)
-            .reset_index(drop=True)
-        )
-        out[g] = df
+        if not idxs:
+            out[g] = _empty_df()
+            continue
+
+        sub: sp.csr_matrix = X[idxs]
+        mean: np.ndarray = np.asarray(sub.mean(axis=0)).ravel()
+        nz: np.ndarray = np.asarray(sub.getnnz(axis=0), dtype=np.int32)
+
+        mask: np.ndarray = nz > 0
+
+        if not np.any(mask):
+            out[g] = _empty_df()
+            continue
+
+        words = feature_names[mask]
+        mean_sel = mean[mask]
+        nz_sel = nz[mask]
+
+        df = pd.DataFrame({
+            "word": words,
+            "mean_freq": mean_sel,
+            "n_docs_nonzero": nz_sel,
+        })
+        df["doc_rate_nonzero"] = df["n_docs_nonzero"] / float(len(idxs))
+        df = df.sort_values(["mean_freq", "n_docs_nonzero"], ascending=[False, False], kind="mergesort")
+        out[g] = df.reset_index(drop=True)
+
     return out

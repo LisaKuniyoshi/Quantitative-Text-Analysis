@@ -9,7 +9,7 @@ import pickle
 
 from breame.spelling import get_american_spelling
 
-from ..data_types import DocResult, NLPBackend, Normalizer, TokenPolicy, TokenLike
+from ..data_types import NLPBackend, Normalizer, TokenPolicy, TokenLike
 
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ
 _SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•"}
@@ -49,8 +49,8 @@ def analyze_docs(
     normalizer: Normalizer,
     texts: Sequence[str],
     policy: TokenPolicy,
-) -> Tuple[List[DocResult], List[Dict[str, float]]]:
-    """文書群を解析し正規化トークン列と文書内相対頻度を求める。
+) -> List[Dict[str, float]]:
+    """文書群を解析し文書内相対頻度を求める。
 
     Args:
         backend (NLPBackend): トークン化・解析を行う NLP バックエンド。
@@ -59,14 +59,13 @@ def analyze_docs(
         policy (TokenPolicy): 強制抽出やフィルタ条件を定義するポリシー。
 
     Returns:
-        tuple[list[DocResult], list[dict[str, float]]]: 文書ごとの解析結果と語の相対頻度分布。
+        list[dict[str, float]]: 文書ごとの語の相対頻度分布。
     """
     forced_index = _build_forced_index(policy)
     keys_by_len: List[Tuple[Tuple[str, ...], str]] = sorted(
         forced_index.items(), key=lambda kv: len(kv[0]), reverse=True
     )
 
-    per_doc: List[DocResult] = []
     per_doc_freqs: List[Dict[str, float]] = []
 
     for doc in backend.pipe(texts):
@@ -128,15 +127,13 @@ def analyze_docs(
             i += 1
 
         total = len(toks)
-        per_doc.append(DocResult(tokens=tuple(toks), total=total))
-
         if total == 0:
             per_doc_freqs.append({})
         else:
             cnt: Dict[str, int] = Counter(toks)
             per_doc_freqs.append({w: c / float(total) for w, c in cnt.items()})
 
-    return per_doc, per_doc_freqs
+    return per_doc_freqs
 
 # ----------------------------
 # キャッシュ付きラッパ
@@ -171,7 +168,7 @@ def get_or_analyze_docs(
     policy: TokenPolicy,
     *,
     cache_dir: Optional[str] = None,
-) -> Tuple[List[DocResult], List[Dict[str, float]]]:
+) -> List[Dict[str, float]]:
     """文書解析結果をキャッシュから取得または新規生成する。
 
     Args:
@@ -182,7 +179,7 @@ def get_or_analyze_docs(
         cache_dir (str | None): キャッシュ保存先。None の場合はキャッシュ未使用。
 
     Returns:
-        tuple[list[DocResult], list[dict[str, float]]]: 文書ごとの解析結果と語の相対頻度分布。
+        list[dict[str, float]]: 文書ごとの語の相対頻度分布。
     """
     if cache_dir is None:
         return analyze_docs(backend, normalizer, texts, policy)
@@ -196,7 +193,7 @@ def get_or_analyze_docs(
         with open(path, "rb") as f:
             return pickle.load(f)
 
-    result = analyze_docs(backend, normalizer, texts, policy)
+    per_doc_freqs = analyze_docs(backend, normalizer, texts, policy)
     with open(path, "wb") as f:
-        pickle.dump(result, f)
-    return result
+        pickle.dump(per_doc_freqs, f)
+    return per_doc_freqs
