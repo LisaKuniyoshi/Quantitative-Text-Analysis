@@ -43,7 +43,6 @@ from ..io.loader import load_df
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
 from ..preprocess.perdoc import get_or_analyze_docs
-from ..features.ppmi import get_or_compute_ppmi
 from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
 from ..cluster.metrics import (
     top_terms_by_centroid,
@@ -54,6 +53,8 @@ from ..io.writers import (
     save_vocab, save_top_terms, save_labels, save_metrics, save_cluster_ratio
 )
 from ..features.embeddings import get_or_svd_embedding
+from ..features.vocab_selection import build_filtered_tf_matrix
+
 
 def main() -> None:
     """クラスタリングパイプライン全体を実行します。
@@ -77,74 +78,74 @@ def main() -> None:
         backend, normalizer, texts, s.token_policy, cache_dir=str(s.cache_dir)
     )
 
-    # PPMI（非対称・対称）と語彙
-    ppmi_out = get_or_compute_ppmi(per_doc_freqs)
-    out_dir = s.ensure_out_dir()
-    save_vocab(out_dir, ppmi_out.vocab)
 
-    cluster_targets: tuple[tuple[Literal["word_doc", "word_word"], sp.csr_matrix], ...] = (
-        ("word_doc", ppmi_out.ppmi_word_doc),
-        ("word_word", ppmi_out.ppmi_word_word),
+    X_tf, vocab = build_filtered_tf_matrix(
+        per_doc_freqs,
+        top_n=s.top_n,
+        min_docs=s.min_docs,
     )
 
-    for name, ppmi in cluster_targets:
-        out_dir_cluster = out_dir / name
-        out_dir_cluster.mkdir(parents=True, exist_ok=True)
-        metrics_rows = []
+    out_dir = s.ensure_out_dir()
+    save_vocab(out_dir, vocab)
 
-        for d in s.svd_dim_list:
-            out_dir_dim = out_dir_cluster / f"svd_dim_{d}"
-            out_dir_dim.mkdir(parents=True, exist_ok=True)
 
-            # 語埋め込み（非対称PPMI→SVD→L2 正規化）
-            Z = get_or_svd_embedding(
-                ppmi,
+    out_dir.mkdir(parents=True, exist_ok=True)
+    metrics_rows = []
+
+    for d in s.svd_dim_list:
+        out_dir_dim = out_dir / f"svd_dim_{d}"
+        out_dir_dim.mkdir(parents=True, exist_ok=True)
+
+        # 語埋め込み（SVD→L2 正規化）
+        Z = get_or_svd_embedding(
+            X_tf.T,
+            svd_dim=d,
+            cfg=s,
+            ppmi_cache_key=None,
+            random_state=s.random_seed,
+        )
+        Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
+
+        # k ごとにクラスタリング
+        for k in s.k_list:
+            res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
+            labels = res.labels_.astype(int)
+
+            # 上位語・ラベル保存
+            top = top_terms_by_centroid(Z, vocab, res.centroids_, s.top_words_per_cluster)
+            save_top_terms(out_dir_dim, k, top)
+            save_labels(out_dir_dim, k, vocab, labels)
+
+            # 指標
+            try:
+                sil = float(silhouette_score(Z, labels, metric="cosine"))
+            except Exception:
+                sil = float("nan")
+
+            stab = stability_top_terms_jaccard(
+                per_doc_freqs,
+                k=k,
                 svd_dim=d,
-                cfg=s,
-                ppmi_cache_key=ppmi_out.cache_key,
-                random_state=s.random_seed,
+                rng=rng,
+                top_words_per_cluster=len(vocab) // (k * 3),
+                max_iter=s.max_iter,
+                top_n=s.top_n,
+                min_docs=s.min_docs,
             )
-            Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
+            save_metrics(out_dir_dim, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
+            metrics_rows.append({"dim": d, "k": int(k), "silhouette": sil, "stability_jaccard": stab})
 
-            # k ごとにクラスタリング
-            for k in s.k_list:
-                res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
-                labels = res.labels_.astype(int)
+            # 文書×クラスタ比率
+            M = abstract_cluster_ratio(per_doc_freqs, vocab, labels)
+            save_cluster_ratio(out_dir_dim, k, M)
 
-                # 上位語・ラベル保存
-                top = top_terms_by_centroid(Z, ppmi_out.vocab, res.centroids_, s.top_words_per_cluster)
-                save_top_terms(out_dir_dim, k, top)
-                save_labels(out_dir_dim, k, ppmi_out.vocab, labels)
-
-                # 指標
-                try:
-                    sil = float(silhouette_score(Z, labels, metric="cosine"))
-                except Exception:
-                    sil = float("nan")
-
-                stab = stability_top_terms_jaccard(
-                    per_doc_freqs,
-                    k=k,
-                    svd_dim=d,
-                    rng=rng,
-                    cooccurrence=name,
-                    top_words_per_cluster=len(ppmi_out.vocab) // (k * 3),
-                    max_iter=s.max_iter,
-                )
-                save_metrics(out_dir_dim, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
-                metrics_rows.append({"dim": d, "k": int(k), "silhouette": sil, "stability_jaccard": stab})
-
-                # 文書×クラスタ比率
-                M = abstract_cluster_ratio(per_doc_freqs, ppmi_out.vocab, labels)
-                save_cluster_ratio(out_dir_dim, k, M)
-
-        metrics_csv_path = out_dir_cluster / "metrics.csv"
-        with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["dim", "k", "silhouette", "stability_jaccard"])
-            writer.writeheader()
-            writer.writerows(metrics_rows)
+    metrics_csv_path = out_dir / "metrics.csv"
+    with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["dim", "k", "silhouette", "stability_jaccard"])
+        writer.writeheader()
+        writer.writerows(metrics_rows)
 
     print("Clustering done.")
-    print(f"- vocab size: {len(ppmi_out.vocab)}")
-    print(f"- docs      : {len(ppmi_out.doc_ids)}")
+    print(f"- vocab size: {len(vocab)}")
+    print(f"- docs      : {len(texts)}")
     print(f"- outputs   : {out_dir}")

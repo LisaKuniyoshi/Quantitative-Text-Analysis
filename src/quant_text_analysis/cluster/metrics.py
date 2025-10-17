@@ -4,7 +4,9 @@ from typing import Dict, List, Tuple, Literal
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
 
-from ..features.ppmi import get_or_compute_ppmi
+from ..settings import Settings
+from ..features.vocab_selection import build_filtered_tf_matrix
+
 from .algorithms import l2_normalize_rows, spherical_kmeans
 
 def top_terms_by_centroid(
@@ -54,9 +56,10 @@ def stability_top_terms_jaccard(
     k: int,
     svd_dim: int,
     rng: np.random.Generator,
-    cooccurrence: Literal["word_doc", "word_word"],
     top_words_per_cluster: int = 20,
-    max_iter: int = 300
+    max_iter: int = 300,
+    top_n: int,
+    min_docs: int,
 ) -> float:
     """クラスタ上位語集合の安定性を Jaccard 係数で測定する。
 
@@ -65,31 +68,52 @@ def stability_top_terms_jaccard(
         k (int): クラスタ数。
         svd_dim (int): SVD の潜在次元。
         rng (numpy.random.Generator): 乱数生成器。
-        cooccurrence (Literal["word_doc", "word_word"]): 使用する共起行列の種類を指定。'word_doc' は語-文書共起行列を、'word_word' は語-語共起行列を用いる。
         top_words_per_cluster (int): 各クラスタで抽出する上位語数。
         max_iter (int): spherical k-means の最大反復回数。
+        top_n (int): 語彙フィルタで残す最大語数。
+        min_docs (int): 語を残す最小文書数。
 
     Returns:
         float: 対応付けたクラスタ間の Jaccard 係数平均。計算不能時は NaN。
     """
+    settings = Settings()
     n_docs = len(per_doc_freqs)
     perm = rng.permutation(n_docs)
+
     A = sorted(perm[: n_docs // 2].tolist())
     B = sorted(perm[n_docs // 2 :].tolist())
 
     def build_word_space(doc_idx: List[int]) -> Tuple[List[str], np.ndarray]:
         sub = [per_doc_freqs[i] for i in doc_idx]
-        out = get_or_compute_ppmi(sub)
-        X_wd = out.ppmi_word_doc if cooccurrence == "word_doc" else out.ppmi_word_word
-        svd = TruncatedSVD(n_components=min(svd_dim, max(2, min(X_wd.shape) - 1)))
-        Z = svd.fit_transform(X_wd)
-        return out.vocab, l2_normalize_rows(Z)
+        X_tf, vocab = build_filtered_tf_matrix(
+            sub,
+            top_n=top_n,
+            min_docs=min_docs,
+        )
+        if X_tf.shape[0] == 0 or X_tf.shape[1] == 0:
+            return [], np.empty((0, 0), dtype=np.float64)
+
+        X_word_doc = X_tf.T
+        max_rank = max(1, min(X_word_doc.shape) - 1)
+        if max_rank <= 0:
+            return vocab, np.empty((0, 0), dtype=np.float64)
+
+        n_components = int(min(svd_dim, max_rank))
+        if n_components <= 0:
+            return vocab, np.empty((0, 0), dtype=np.float64)
+
+        svd = TruncatedSVD(n_components=n_components, random_state=settings.random_seed)
+        Z = svd.fit_transform(X_word_doc)
+        return vocab, l2_normalize_rows(Z)
 
     vocabA, ZA = build_word_space(A)
     vocabB, ZB = build_word_space(B)
 
-    resA = spherical_kmeans(ZA, k=k, n_init=10, max_iter=max_iter, rng=rng)
-    resB = spherical_kmeans(ZB, k=k, n_init=10, max_iter=max_iter, rng=rng)
+    if ZA.size == 0 or ZB.size == 0 or ZA.shape[0] < k or ZB.shape[0] < k:
+        return float("nan")
+
+    resA = spherical_kmeans(ZA, k=k, n_init=settings.n_init, max_iter=max_iter, rng=rng)
+    resB = spherical_kmeans(ZB, k=k, n_init=settings.n_init, max_iter=max_iter, rng=rng)
 
     topA = top_terms_by_centroid(ZA, vocabA, resA.centroids_, top_words_per_cluster)
     topB = top_terms_by_centroid(ZB, vocabB, resB.centroids_, top_words_per_cluster)
