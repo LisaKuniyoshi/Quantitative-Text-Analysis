@@ -10,9 +10,9 @@ import os
 
 import numpy as np
 import scipy.sparse as sp
-from sklearn.feature_extraction import DictVectorizer
 
 from ..settings import Settings
+from .vocab_selection import build_filtered_tf_matrix
 
 EPS: float = 1e-8  # 数値安定用（log のゼロ回避）
 
@@ -96,48 +96,26 @@ def _compute_ppmi_from_perdocfreqs(
     top_n: int,
     min_docs: int,
 ) -> PPMIOutputs:
-    doc_ids = list(range(len(per_doc_freqs)))
-    vec = DictVectorizer(dtype=np.float64, sparse=True, sort=False)
-    X_full = sp.csr_matrix(vec.fit_transform(per_doc_freqs), copy=False)
-    vocab_full = list(vec.get_feature_names_out())
-
     D_docs = len(per_doc_freqs)
-    if X_full.shape[1] == 0 or top_n <= 0:
-        empty_tf = sp.csr_matrix((D_docs, 0), dtype=np.float64)
+    doc_ids = list(range(D_docs))
+    X_tf, vocab = build_filtered_tf_matrix(
+        per_doc_freqs,
+        top_n=top_n,
+        min_docs=min_docs,
+    )
+
+    if X_tf.shape[1] == 0:
         empty_wd = sp.csr_matrix((0, D_docs), dtype=np.float64)
         empty_ww = sp.csr_matrix((0, 0), dtype=np.float64)
-        return PPMIOutputs([], doc_ids, empty_tf, empty_wd, empty_ww)
+        return PPMIOutputs([], doc_ids, X_tf, empty_wd, empty_ww)
 
-    doc_counts = np.asarray(X_full.getnnz(axis=0), dtype=np.int32)
-    if min_docs > 1:
-        mask = doc_counts >= min_docs
-    else:
-        mask = doc_counts > 0
-
-    candidate_idx = np.flatnonzero(mask)
-    if candidate_idx.size == 0:
-        empty_tf = sp.csr_matrix((D_docs, 0), dtype=np.float64)
-        empty_wd = sp.csr_matrix((0, D_docs), dtype=np.float64)
-        empty_ww = sp.csr_matrix((0, 0), dtype=np.float64)
-        return PPMIOutputs([], doc_ids, empty_tf, empty_wd, empty_ww)
-
-    mean_freq = np.asarray(X_full.mean(axis=0)).ravel()
-    order = np.lexsort((-doc_counts[candidate_idx], -mean_freq[candidate_idx]))
-    ordered_idx = candidate_idx[order]
-
-    if top_n < len(ordered_idx):
-        ordered_idx = ordered_idx[:top_n]
-
-    X = X_full[:, ordered_idx].tocsr()
-    vocab = [vocab_full[i] for i in ordered_idx]
-
-    s_w = np.asarray(X.sum(axis=0)).ravel()
+    s_w = np.asarray(X_tf.sum(axis=0)).ravel()
 
     # 非対称・対称の PPMI（定義は元空間、分子のみ射影後）
-    ppmi_wd = _ppmi_word_doc_from_fullspace(X, s_w, D_docs)
-    ppmi_ww = _ppmi_word_word_from_fullspace(X, s_w, D_docs)
+    ppmi_wd = _ppmi_word_doc_from_fullspace(X_tf, s_w, D_docs)
+    ppmi_ww = _ppmi_word_word_from_fullspace(X_tf, s_w, D_docs)
 
-    return PPMIOutputs(vocab, doc_ids, X, ppmi_wd.tocsr(), ppmi_ww.tocsr())
+    return PPMIOutputs(vocab, doc_ids, X_tf, ppmi_wd.tocsr(), ppmi_ww.tocsr())
 
 # ----------------------------
 # キャッシュ付き入口（per-doc 前処理も含む）
