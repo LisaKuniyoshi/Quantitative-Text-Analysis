@@ -46,7 +46,6 @@ from ..preprocess.perdoc import get_or_analyze_docs
 from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
 from ..cluster.metrics import (
     top_terms_by_centroid,
-    stability_top_terms_jaccard,
     abstract_cluster_ratio,
 )
 from ..io.writers import (
@@ -122,18 +121,8 @@ def main() -> None:
             except Exception:
                 sil = float("nan")
 
-            stab = stability_top_terms_jaccard(
-                per_doc_freqs,
-                k=k,
-                svd_dim=d,
-                rng=rng,
-                top_words_per_cluster=len(vocab) // (k * 3),
-                max_iter=s.max_iter,
-                top_n=s.top_n,
-                min_docs=s.min_docs,
-            )
-            save_metrics(out_dir_dim, k, inertia=res.inertia_, silhouette=sil, stability_jaccard=stab)
-            metrics_rows.append({"dim": d, "k": int(k), "silhouette": sil, "stability_jaccard": stab})
+            save_metrics(out_dir_dim, k, inertia=res.inertia_, silhouette=sil)
+            metrics_rows.append({"dim": d, "k": int(k), "silhouette": sil})
 
             # 文書×クラスタ比率
             M = abstract_cluster_ratio(per_doc_freqs, vocab, labels)
@@ -141,7 +130,7 @@ def main() -> None:
 
     metrics_csv_path = out_dir / "metrics.csv"
     with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["dim", "k", "silhouette", "stability_jaccard"])
+        writer = csv.DictWriter(f, fieldnames=["dim", "k", "silhouette"])
         writer.writeheader()
         writer.writerows(metrics_rows)
 

@@ -68,8 +68,7 @@ def save_metrics(
     k: int,
     *,
     inertia: float,
-    silhouette: Optional[float],
-    stability_jaccard: Optional[float]
+    silhouette: Optional[float]
 ) -> Path:
     """クラスタ評価指標を JSON 形式で保存する。
 
@@ -78,7 +77,6 @@ def save_metrics(
         k (int): クラスタ数。
         inertia (float): cos 慣性。
         silhouette (float | None): cos シルエット。NaN は None に変換。
-        stability_jaccard (float | None): トップ語集合の Jaccard 安定性。
 
     Returns:
         Path: 生成された JSON ファイルのパス。
@@ -93,7 +91,6 @@ def save_metrics(
         "k": int(k),
         "inertia_cos": float(inertia),
         "silhouette_cos": _nan_to_none(silhouette),
-        "stability_top_terms_jaccard": _nan_to_none(stability_jaccard),
     }
     path = out_dir / f"metrics_k{k}.json"
     path.write_text(json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8")
