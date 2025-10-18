@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import scipy.sparse as sp
 from sklearn.feature_extraction import DictVectorizer
-
+from sklearn.feature_extraction.text import TfidfTransformer
 
 def build_filtered_tf_matrix(
     per_doc_freqs: List[Dict[str, float]],
@@ -13,7 +13,7 @@ def build_filtered_tf_matrix(
     top_n: int,
     min_docs: int,
 ) -> Tuple[sp.csr_matrix, List[str]]:
-    """文書ごとの語頻度辞書をベクトル化し、語彙をフィルタリングする。
+    """文書ごとの語頻度辞書を TF-IDF ベクトル化し、語彙をフィルタリングする。
 
     Args:
         per_doc_freqs: 文書ごとの語相対頻度辞書のリスト。
@@ -25,13 +25,14 @@ def build_filtered_tf_matrix(
     """
     n_docs = len(per_doc_freqs)
     vec = DictVectorizer(dtype=np.float64, sparse=True, sort=False)
-    X_full = sp.csr_matrix(vec.fit_transform(per_doc_freqs), copy=False)
+
+    X_full_tf = sp.csr_matrix(vec.fit_transform(per_doc_freqs), copy=False)
     vocab_full = list(vec.get_feature_names_out())
 
-    if X_full.shape[1] == 0 or top_n <= 0:
+    if X_full_tf.shape[1] == 0 or top_n <= 0:
         return sp.csr_matrix((n_docs, 0), dtype=np.float64), []
 
-    doc_counts = np.asarray(X_full.getnnz(axis=0), dtype=np.int32)
+    doc_counts = np.asarray(X_full_tf.getnnz(axis=0), dtype=np.int32)
     if min_docs > 1:
         mask = doc_counts >= min_docs
     else:
@@ -41,12 +42,15 @@ def build_filtered_tf_matrix(
     if candidate_idx.size == 0:
         return sp.csr_matrix((n_docs, 0), dtype=np.float64), []
 
-    mean_freq = np.asarray(X_full.mean(axis=0)).ravel()
+    tfidf = TfidfTransformer(norm=None, use_idf=True, smooth_idf=False, sublinear_tf=False)
+    X_full_tfidf = tfidf.fit_transform(X_full_tf)
+
+    mean_freq = np.asarray(X_full_tf.mean(axis=0)).ravel()
     order = np.lexsort((-doc_counts[candidate_idx], -mean_freq[candidate_idx]))
     selected_idx = candidate_idx[order]
     if top_n < selected_idx.size:
         selected_idx = selected_idx[:top_n]
 
-    X = X_full[:, selected_idx].tocsr()
+    X = sp.csr_matrix(X_full_tfidf[:, selected_idx])
     vocab = [vocab_full[i] for i in selected_idx]
     return X, vocab
