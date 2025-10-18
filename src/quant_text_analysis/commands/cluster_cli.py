@@ -32,11 +32,12 @@ I/O:
 """
 from __future__ import annotations
 import csv
-from typing import List, Literal
+from typing import List
 
+import numpy as np
+from numpy.typing import ArrayLike
 from numpy.random import default_rng
-import scipy.sparse as sp
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, silhouette_samples
 
 from ..settings import Settings
 from ..io.loader import load_df
@@ -44,12 +45,9 @@ from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
 from ..preprocess.perdoc import get_or_analyze_docs
 from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
-from ..cluster.metrics import (
-    top_terms_by_centroid,
-    abstract_cluster_ratio,
-)
+from ..cluster.metrics import abstract_cluster_ratio
 from ..io.writers import (
-    save_vocab, save_top_terms, save_labels, save_metrics, save_cluster_ratio
+    save_vocab, save_cluster_terms, save_labels, save_metrics, save_cluster_ratio
 )
 from ..features.embeddings import get_or_svd_embedding
 from ..features.vocab_selection import build_filtered_tf_matrix
@@ -110,9 +108,10 @@ def main() -> None:
             res = spherical_kmeans(Z, k=k, n_init=s.n_init, max_iter=s.max_iter, rng=rng)
             labels = res.labels_.astype(int)
 
-            # 上位語・ラベル保存
-            top = top_terms_by_centroid(Z, vocab, res.centroids_, s.top_words_per_cluster)
-            save_top_terms(out_dir_dim, k, top)
+            # 語スコア（silhouette）保存
+            sil_samples: ArrayLike = silhouette_samples(Z, labels, metric="cosine")
+
+            save_cluster_terms(out_dir_dim, k, vocab, labels, sil_samples)
             save_labels(out_dir_dim, k, vocab, labels)
 
             # 指標

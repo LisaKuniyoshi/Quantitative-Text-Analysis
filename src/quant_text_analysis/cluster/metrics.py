@@ -1,37 +1,7 @@
 # quant_text_analysis/cluster/metrics.py
 from __future__ import annotations
-from typing import Dict, List, Tuple, Literal
+from typing import Dict, List
 import numpy as np
-from sklearn.decomposition import TruncatedSVD
-
-from ..settings import Settings
-from ..features.vocab_selection import build_filtered_tf_matrix
-
-from .algorithms import l2_normalize_rows, spherical_kmeans
-
-def top_terms_by_centroid(
-    X_unit: np.ndarray,
-    vocab: List[str],
-    centroids_unit: np.ndarray,
-    top_n: int
-) -> Dict[int, List[Tuple[str, float]]]:
-    """クラスタ重心と語ベクトルの cos 類似度から上位語を抽出する。
-
-    Args:
-        X_unit (numpy.ndarray): 語ベクトル行列（各行が単位ベクトル）。
-        vocab (list[str]): 語彙リスト。
-        centroids_unit (numpy.ndarray): クラスタ重心の単位ベクトル行列。
-        top_n (int): 返す語数。
-
-    Returns:
-        dict[int, list[tuple[str, float]]]: クラスタ ID ごとの語と類似度。
-    """
-    sims = X_unit @ centroids_unit.T  # (V, k)
-    out: Dict[int, List[Tuple[str, float]]] = {}
-    for c in range(sims.shape[1]):
-        idx = np.argsort(sims[:, c])[::-1][:top_n]
-        out[c] = [(vocab[i], float(sims[i, c])) for i in idx]
-    return out
 
 def abstract_cluster_ratio(
     per_doc_freqs: List[Dict[str, float]],

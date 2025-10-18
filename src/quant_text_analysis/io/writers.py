@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -22,27 +22,34 @@ def save_vocab(out_dir: Path, vocab: List[str]) -> None:
         encoding="utf-8"
     )
 
-def save_top_terms(
+def save_cluster_terms(
     out_dir: Path,
     k: int,
-    top: Dict[int, List[Tuple[str, float]]]
+    vocab: List[str],
+    labels: np.ndarray,
+    silhouette_scores,
 ) -> Path:
-    """クラスタ上位語リストを CSV 形式で保存する。
+    """クラスタ語リストをシルエット指標付きで CSV に保存する。
 
     Args:
         out_dir (Path): 出力先ディレクトリ。
         k (int): クラスタ数。
-        top (dict[int, list[tuple[str, float]]]): クラスタ ID ごとの語と類似度。
+        vocab (list[str]): 語彙リスト。
+        labels (numpy.ndarray): 語彙に対応するクラスタラベル。
+        silhouette_scores (numpy.ndarray): 各語のシルエット値。
 
     Returns:
         Path: 生成された CSV ファイルのパス。
     """
-    rows: List[Tuple[int, int, str, float]] = []
-    for c, pairs in top.items():
-        for rank, (w, s) in enumerate(pairs, start=1):
-            rows.append((c, rank, w, s))
-    df = pd.DataFrame(rows, columns=["cluster", "rank", "word", "cos_to_centroid"])
-    path = out_dir / f"top_terms_k{k}.csv"
+    df = pd.DataFrame(
+        {
+            "cluster": labels.astype(int),
+            "word": vocab,
+            "silhouette_cos": silhouette_scores.astype(float),
+        }
+    )
+    df.sort_values(["cluster", "silhouette_cos"], ascending=[True, False], inplace=True)
+    path = out_dir / f"cluster_terms_k{k}.csv"
     df.to_csv(path, index=False, encoding="utf-8")
     return path
 
