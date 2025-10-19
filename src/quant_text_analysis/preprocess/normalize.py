@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Optional
 
+from breame.spelling import get_american_spelling
+
 from ..data_types import Normalizer, TokenLike, TokenPolicy
 
 def build_normalizer(policy: TokenPolicy) -> Normalizer:
@@ -31,10 +33,10 @@ def build_normalizer(policy: TokenPolicy) -> Normalizer:
             return None
         surface = text.lower()
         if surface in policy.keep_surface_for:
-            return surface
+            return get_american_spelling(surface)
         lemma = tok.lemma_.lower().strip()
         if lemma in ("-pron-", ""):
-            return surface
-        return lemma
+            return get_american_spelling(surface)
+        return get_american_spelling(lemma)
 
     return normalize
