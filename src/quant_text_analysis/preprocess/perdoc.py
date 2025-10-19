@@ -16,9 +16,9 @@ from ..data_types import NLPBackend, Normalizer, TokenPolicy, TokenLike
 PerDocFreq = Dict[str, float]
 
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ
-_SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•"}
+_SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•", "/", "\\"}
 # 句点やコロンなどは「語間の橋渡し」に使わない（= そこで強制一致は切れる）
-_BREAK_PUNCTS = {".", "…", ":", ";", "/", "\\", "?", "!", ",", "(", ")", "[", "]", "{", "}", "“", "”", "‘", "’", "'"}
+_BREAK_PUNCTS = {".", "…", ":", ";", "?", "!", ",", "(", ")", "[", "]", "{", "}", "“", "”", "‘", "’", "'"}
 
 # ----------------------------
 # 強制フレーズ辞書
@@ -26,24 +26,33 @@ _BREAK_PUNCTS = {".", "…", ":", ";", "/", "\\", "?", "!", ",", "(", ")", "[", 
 def _build_forced_index(policy: TokenPolicy) -> Dict[Tuple[str, ...], str]:
     """強制抽出辞書（キー＝lemma列の小文字タプル、値＝結合トークン）"""
     idx: Dict[Tuple[str, ...], str] = {}
+    alias_map: Dict[Tuple[str, ...], str] = {}
+    for key, alias in policy.forced_aliases:
+        if not key or not alias:
+            continue
+        lowered_key = tuple(get_american_spelling(word.lower()) for word in key)
+        alias_map[lowered_key] = alias.strip().lower()
     for phrase in policy.forced_phrases:
         if not phrase:
             continue
-        key = tuple(w.lower() for w in phrase)
-        idx[key] = policy.forced_joiner.join(key)
+        key = tuple(get_american_spelling(w.lower()) for w in phrase)
+        alias = alias_map.get(key)
+        idx[key] = alias if alias is not None else policy.forced_joiner.join(key)
+    for key, alias in alias_map.items():
+        idx.setdefault(key, alias)
     return idx
 
 
 def _is_skip_punct(tok: TokenLike) -> bool:
     """強制抽出評価時にスキップ可能な句読点かどうか。"""
     t = tok.text
-    return (tok.pos_ == "PUNCT") and (t in _SKIP_PUNCTS)
+    return (tok.pos_ == "SPACE") or (t in _SKIP_PUNCTS)
 
 
 def _is_break_punct(tok: TokenLike) -> bool:
     """強制抽出のマッチングを打ち切る句読点かどうか。"""
     t = tok.text
-    return (tok.pos_ == "PUNCT") and (t in _BREAK_PUNCTS)
+    return t in _BREAK_PUNCTS
 
 # ----------------------------
 # 主処理：文書ごとの正規化トークンと文書内相対頻度
@@ -156,6 +165,10 @@ def _policy_fingerprint(policy: TokenPolicy) -> Dict[str, object]:
         "alpha_regex": policy.alpha_regex,
         "forced_phrases": [list(p) for p in sorted(policy.forced_phrases)],
         "forced_joiner": policy.forced_joiner,
+        "forced_aliases": [
+            {"key": list(key), "alias": alias}
+            for key, alias in sorted(policy.forced_aliases, key=lambda item: (item[0], item[1]))
+        ],
     }
 
 

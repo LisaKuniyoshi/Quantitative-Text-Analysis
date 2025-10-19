@@ -40,7 +40,8 @@ class TokenPolicy:
         keep_surface_for (frozenset[str]): 表層形を保持する品詞集合。
         alpha_regex (str): アルファベット判定に用いる正規表現。
         forced_phrases (tuple[tuple[str, ...], ...]): 強制的に多語表現とみなす語列。
-        forced_joiner (str): 強制多語表現を結合する際の連結文字。
+    forced_joiner (str): 強制多語表現を結合する際の連結文字。
+    forced_aliases (tuple[tuple[tuple[str, ...], str], ...]): 多語表現ごとの出力別名。
     """
     target_pos: FrozenSet[str]
     exclude_ner: FrozenSet[str]
@@ -50,6 +51,7 @@ class TokenPolicy:
     alpha_regex: str = r"^[A-Za-z]+$"
     forced_phrases: Tuple[Tuple[str, ...], ...] = ()
     forced_joiner: str = "_"
+    forced_aliases: Tuple[Tuple[Tuple[str, ...], str], ...] = ()
 
 # ランキングの表示パラメタ
 @dataclass(frozen=True)
