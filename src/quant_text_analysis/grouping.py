@@ -1,5 +1,9 @@
+"""Grouping helpers used by frequency and clustering analyses."""
+
 from __future__ import annotations
+
 from typing import Optional
+
 import pandas as pd
 
 def period_group_year(y: Optional[int]) -> Optional[str]:

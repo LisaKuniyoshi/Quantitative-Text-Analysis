@@ -1,3 +1,5 @@
+"""Per-document token analysis with caching support."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -11,6 +13,8 @@ from breame.spelling import get_american_spelling
 
 from ..data_types import NLPBackend, Normalizer, TokenPolicy, TokenLike
 
+PerDocFreq = Dict[str, float]
+
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ
 _SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•"}
 # 句点やコロンなどは「語間の橋渡し」に使わない（= そこで強制一致は切れる）
@@ -19,7 +23,6 @@ _BREAK_PUNCTS = {".", "…", ":", ";", "/", "\\", "?", "!", ",", "(", ")", "[", 
 # ----------------------------
 # 強制フレーズ辞書
 # ----------------------------
-
 def _build_forced_index(policy: TokenPolicy) -> Dict[Tuple[str, ...], str]:
     """強制抽出辞書（キー＝lemma列の小文字タプル、値＝結合トークン）"""
     idx: Dict[Tuple[str, ...], str] = {}
@@ -32,11 +35,13 @@ def _build_forced_index(policy: TokenPolicy) -> Dict[Tuple[str, ...], str]:
 
 
 def _is_skip_punct(tok: TokenLike) -> bool:
+    """強制抽出評価時にスキップ可能な句読点かどうか。"""
     t = tok.text
     return (tok.pos_ == "PUNCT") and (t in _SKIP_PUNCTS)
 
 
 def _is_break_punct(tok: TokenLike) -> bool:
+    """強制抽出のマッチングを打ち切る句読点かどうか。"""
     t = tok.text
     return (tok.pos_ == "PUNCT") and (t in _BREAK_PUNCTS)
 
@@ -49,7 +54,7 @@ def analyze_docs(
     normalizer: Normalizer,
     texts: Sequence[str],
     policy: TokenPolicy,
-) -> List[Dict[str, float]]:
+) -> List[PerDocFreq]:
     """文書群を解析し文書内相対頻度を求める。
 
     Args:
@@ -66,7 +71,7 @@ def analyze_docs(
         forced_index.items(), key=lambda kv: len(kv[0]), reverse=True
     )
 
-    per_doc_freqs: List[Dict[str, float]] = []
+    per_doc_freqs: List[PerDocFreq] = []
 
     for doc in backend.pipe(texts):
         raw: List[TokenLike] = [tok for tok in doc]
@@ -138,8 +143,9 @@ def analyze_docs(
 # ----------------------------
 # キャッシュ付きラッパ
 # ----------------------------
+def _policy_fingerprint(policy: TokenPolicy) -> Dict[str, object]:
+    """JSON シリアライズ可能なポリシー指紋を生成する。"""
 
-def _policy_fingerprint(policy: TokenPolicy) -> dict[str, object]:
     # frozenset を JSON 化可能な list に落とす
     return {
         "target_pos": sorted(policy.target_pos),
@@ -151,6 +157,7 @@ def _policy_fingerprint(policy: TokenPolicy) -> dict[str, object]:
         "forced_phrases": [list(p) for p in sorted(policy.forced_phrases)],
         "forced_joiner": policy.forced_joiner,
     }
+
 
 def _make_key(texts: Iterable[str], policy: TokenPolicy, backend_id: str) -> str:
     h = hashlib.sha256()
@@ -168,7 +175,7 @@ def get_or_analyze_docs(
     policy: TokenPolicy,
     *,
     cache_dir: Optional[str] = None,
-) -> List[Dict[str, float]]:
+) -> List[PerDocFreq]:
     """文書解析結果をキャッシュから取得または新規生成する。
 
     Args:

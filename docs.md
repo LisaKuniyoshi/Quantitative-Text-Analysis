@@ -1,82 +1,91 @@
 # Table of Contents
 
-* [quant\_text\_analysis.cluster.algorithms](#quant_text_analysis.cluster.algorithms)
-  * [l2\_normalize\_rows](#quant_text_analysis.cluster.algorithms.l2_normalize_rows)
-  * [cosine\_inertia](#quant_text_analysis.cluster.algorithms.cosine_inertia)
-  * [SKMeansResult](#quant_text_analysis.cluster.algorithms.SKMeansResult)
-    * [labels\_](#quant_text_analysis.cluster.algorithms.SKMeansResult.labels_)
-    * [centroids\_](#quant_text_analysis.cluster.algorithms.SKMeansResult.centroids_)
-    * [inertia\_](#quant_text_analysis.cluster.algorithms.SKMeansResult.inertia_)
-  * [spherical\_kmeans](#quant_text_analysis.cluster.algorithms.spherical_kmeans)
-* [quant\_text\_analysis.cluster.metrics](#quant_text_analysis.cluster.metrics)
-  * [top\_terms\_by\_centroid](#quant_text_analysis.cluster.metrics.top_terms_by_centroid)
-  * [jaccard](#quant_text_analysis.cluster.metrics.jaccard)
-  * [stability\_top\_terms\_jaccard](#quant_text_analysis.cluster.metrics.stability_top_terms_jaccard)
-  * [abstract\_cluster\_ratio](#quant_text_analysis.cluster.metrics.abstract_cluster_ratio)
-* [quant\_text\_analysis.commands.cluster\_cli](#quant_text_analysis.commands.cluster_cli)
-  * [main](#quant_text_analysis.commands.cluster_cli.main)
-* [quant\_text\_analysis.commands.freq\_cli](#quant_text_analysis.commands.freq_cli)
-  * [main](#quant_text_analysis.commands.freq_cli.main)
-* [quant\_text\_analysis.commands.phrases\_cli](#quant_text_analysis.commands.phrases_cli)
-  * [train\_phrases](#quant_text_analysis.commands.phrases_cli.train_phrases)
-  * [phrase\_df\_from\_model](#quant_text_analysis.commands.phrases_cli.phrase_df_from_model)
-  * [count\_phrase\_usage](#quant_text_analysis.commands.phrases_cli.count_phrase_usage)
-  * [main](#quant_text_analysis.commands.phrases_cli.main)
-* [quant\_text\_analysis.config](#quant_text_analysis.config)
-  * [default\_columns](#quant_text_analysis.config.default_columns)
-  * [default\_token\_policy](#quant_text_analysis.config.default_token_policy)
-* [quant\_text\_analysis.data\_types](#quant_text_analysis.data_types)
-  * [Columns](#quant_text_analysis.data_types.Columns)
-  * [TokenPolicy](#quant_text_analysis.data_types.TokenPolicy)
-  * [RankingParams](#quant_text_analysis.data_types.RankingParams)
-  * [DocResult](#quant_text_analysis.data_types.DocResult)
-  * [TokenLike](#quant_text_analysis.data_types.TokenLike)
-  * [DocLike](#quant_text_analysis.data_types.DocLike)
-  * [NLPBackend](#quant_text_analysis.data_types.NLPBackend)
-* [quant\_text\_analysis.features.embeddings](#quant_text_analysis.features.embeddings)
-  * [get\_or\_svd\_embedding](#quant_text_analysis.features.embeddings.get_or_svd_embedding)
-* [quant\_text\_analysis.features.frequency](#quant_text_analysis.features.frequency)
-  * [frequency\_rankings](#quant_text_analysis.features.frequency.frequency_rankings)
-* [quant\_text\_analysis.features.ppmi](#quant_text_analysis.features.ppmi)
-  * [EPS](#quant_text_analysis.features.ppmi.EPS)
-  * [PPMIOutputs](#quant_text_analysis.features.ppmi.PPMIOutputs)
-    * [vocab](#quant_text_analysis.features.ppmi.PPMIOutputs.vocab)
-    * [doc\_ids](#quant_text_analysis.features.ppmi.PPMIOutputs.doc_ids)
-    * [X\_tf](#quant_text_analysis.features.ppmi.PPMIOutputs.X_tf)
-    * [ppmi\_word\_doc](#quant_text_analysis.features.ppmi.PPMIOutputs.ppmi_word_doc)
-    * [ppmi\_word\_word](#quant_text_analysis.features.ppmi.PPMIOutputs.ppmi_word_word)
-    * [cache\_key](#quant_text_analysis.features.ppmi.PPMIOutputs.cache_key)
-  * [get\_or\_compute\_ppmi](#quant_text_analysis.features.ppmi.get_or_compute_ppmi)
-* [quant\_text\_analysis.grouping](#quant_text_analysis.grouping)
-  * [period\_group\_year](#quant_text_analysis.grouping.period_group_year)
-  * [method\_group](#quant_text_analysis.grouping.method_group)
-* [quant\_text\_analysis.io.loader](#quant_text_analysis.io.loader)
-  * [load\_df](#quant_text_analysis.io.loader.load_df)
-* [quant\_text\_analysis.io.writers](#quant_text_analysis.io.writers)
-  * [save\_vocab](#quant_text_analysis.io.writers.save_vocab)
-  * [save\_ppmi](#quant_text_analysis.io.writers.save_ppmi)
-  * [save\_top\_terms](#quant_text_analysis.io.writers.save_top_terms)
-  * [save\_labels](#quant_text_analysis.io.writers.save_labels)
-  * [save\_metrics](#quant_text_analysis.io.writers.save_metrics)
-  * [save\_cluster\_ratio](#quant_text_analysis.io.writers.save_cluster_ratio)
-* [quant\_text\_analysis.preprocess.nlp\_backend](#quant_text_analysis.preprocess.nlp_backend)
-  * [SpacyBackend](#quant_text_analysis.preprocess.nlp_backend.SpacyBackend)
-    * [\_\_init\_\_](#quant_text_analysis.preprocess.nlp_backend.SpacyBackend.__init__)
-    * [pipe](#quant_text_analysis.preprocess.nlp_backend.SpacyBackend.pipe)
-* [quant\_text\_analysis.preprocess.normalize](#quant_text_analysis.preprocess.normalize)
-  * [build\_normalizer](#quant_text_analysis.preprocess.normalize.build_normalizer)
-* [quant\_text\_analysis.preprocess.perdoc](#quant_text_analysis.preprocess.perdoc)
-  * [analyze\_docs](#quant_text_analysis.preprocess.perdoc.analyze_docs)
-  * [get\_or\_analyze\_docs](#quant_text_analysis.preprocess.perdoc.get_or_analyze_docs)
-* [quant\_text\_analysis.settings](#quant_text_analysis.settings)
-  * [Settings](#quant_text_analysis.settings.Settings)
-    * [columns](#quant_text_analysis.settings.Settings.columns)
-    * [token\_policy](#quant_text_analysis.settings.Settings.token_policy)
-    * [ensure\_out\_dir](#quant_text_analysis.settings.Settings.ensure_out_dir)
+- [Table of Contents](#table-of-contents)
+- [quant\_text\_analysis.cluster.algorithms](#quant_text_analysisclusteralgorithms)
+      - [l2\_normalize\_rows](#l2_normalize_rows)
+      - [cosine\_inertia](#cosine_inertia)
+  - [SKMeansResult Objects](#skmeansresult-objects)
+      - [labels\_](#labels_)
+      - [centroids\_](#centroids_)
+      - [inertia\_](#inertia_)
+      - [spherical\_kmeans](#spherical_kmeans)
+- [quant\_text\_analysis.cluster.metrics](#quant_text_analysisclustermetrics)
+      - [abstract\_cluster\_ratio](#abstract_cluster_ratio)
+- [quant\_text\_analysis.commands.cluster\_cli](#quant_text_analysiscommandscluster_cli)
+      - [main](#main)
+- [quant\_text\_analysis.commands.freq\_cli](#quant_text_analysiscommandsfreq_cli)
+      - [main](#main-1)
+- [quant\_text\_analysis.commands.phrases\_cli](#quant_text_analysiscommandsphrases_cli)
+      - [simple\_tokenize](#simple_tokenize)
+      - [build\_corpus](#build_corpus)
+      - [train\_phrases](#train_phrases)
+      - [phrase\_df\_from\_model](#phrase_df_from_model)
+      - [count\_phrase\_usage](#count_phrase_usage)
+      - [main](#main-2)
+- [quant\_text\_analysis.config](#quant_text_analysisconfig)
+      - [default\_columns](#default_columns)
+      - [default\_token\_policy](#default_token_policy)
+- [quant\_text\_analysis.data\_types](#quant_text_analysisdata_types)
+  - [Columns Objects](#columns-objects)
+  - [TokenPolicy Objects](#tokenpolicy-objects)
+  - [RankingParams Objects](#rankingparams-objects)
+  - [TokenLike Objects](#tokenlike-objects)
+  - [DocLike Objects](#doclike-objects)
+  - [NLPBackend Objects](#nlpbackend-objects)
+- [quant\_text\_analysis.features.embeddings](#quant_text_analysisfeaturesembeddings)
+      - [get\_or\_svd\_embedding](#get_or_svd_embedding)
+- [quant\_text\_analysis.features.frequency](#quant_text_analysisfeaturesfrequency)
+      - [frequency\_rankings](#frequency_rankings)
+- [quant\_text\_analysis.features.ppmi](#quant_text_analysisfeaturesppmi)
+      - [EPS](#eps)
+  - [PPMIOutputs Objects](#ppmioutputs-objects)
+      - [vocab](#vocab)
+      - [doc\_ids](#doc_ids)
+      - [X\_tf](#x_tf)
+      - [ppmi\_word\_doc](#ppmi_word_doc)
+      - [ppmi\_word\_word](#ppmi_word_word)
+      - [cache\_key](#cache_key)
+      - [get\_or\_compute\_ppmi](#get_or_compute_ppmi)
+- [quant\_text\_analysis.features.vocab\_selection](#quant_text_analysisfeaturesvocab_selection)
+      - [build\_filtered\_tf\_matrix](#build_filtered_tf_matrix)
+- [quant\_text\_analysis.grouping](#quant_text_analysisgrouping)
+      - [period\_group\_year](#period_group_year)
+      - [method\_group](#method_group)
+- [quant\_text\_analysis.io.loader](#quant_text_analysisioloader)
+      - [load\_df](#load_df)
+- [quant\_text\_analysis.io.writers](#quant_text_analysisiowriters)
+      - [save\_vocab](#save_vocab)
+      - [save\_cluster\_terms](#save_cluster_terms)
+      - [save\_labels](#save_labels)
+      - [save\_metrics](#save_metrics)
+      - [save\_cluster\_ratio](#save_cluster_ratio)
+- [quant\_text\_analysis.preprocess.nlp\_backend](#quant_text_analysispreprocessnlp_backend)
+  - [\_SpacyTokenAdapter Objects](#_spacytokenadapter-objects)
+      - [\_\_init\_\_](#__init__)
+  - [\_SpacyDocAdapter Objects](#_spacydocadapter-objects)
+      - [\_\_init\_\_](#__init__-1)
+      - [\_\_iter\_\_](#__iter__)
+  - [SpacyBackend Objects](#spacybackend-objects)
+      - [\_\_init\_\_](#__init__-2)
+      - [pipe](#pipe)
+- [quant\_text\_analysis.preprocess.normalize](#quant_text_analysispreprocessnormalize)
+      - [build\_normalizer](#build_normalizer)
+- [quant\_text\_analysis.preprocess.perdoc](#quant_text_analysispreprocessperdoc)
+      - [analyze\_docs](#analyze_docs)
+      - [get\_or\_analyze\_docs](#get_or_analyze_docs)
+- [quant\_text\_analysis.settings](#quant_text_analysissettings)
+  - [Settings Objects](#settings-objects)
+      - [columns](#columns)
+      - [token\_policy](#token_policy)
+      - [ensure\_out\_dir](#ensure_out_dir)
+- [quant\_text\_analysis.\_\_main\_\_](#quant_text_analysis__main__)
+      - [main](#main-3)
 
 <a id="quant_text_analysis.cluster.algorithms"></a>
 
 # quant\_text\_analysis.cluster.algorithms
+
+球面 k-means クラスタリングで利用する補助モジュール。
 
 <a id="quant_text_analysis.cluster.algorithms.l2_normalize_rows"></a>
 
@@ -186,87 +195,15 @@ cos 類似度最大化を目的とした spherical k-means を実行する。
 
 # quant\_text\_analysis.cluster.metrics
 
-<a id="quant_text_analysis.cluster.metrics.top_terms_by_centroid"></a>
-
-#### top\_terms\_by\_centroid
-
-```python
-def top_terms_by_centroid(X_unit: np.ndarray, vocab: List[str],
-                          centroids_unit: np.ndarray,
-                          top_n: int) -> Dict[int, List[Tuple[str, float]]]
-```
-
-クラスタ重心と語ベクトルの cos 類似度から上位語を抽出する。
-
-**Arguments**:
-
-- `X_unit` _numpy.ndarray_ - 語ベクトル行列（各行が単位ベクトル）。
-- `vocab` _list[str]_ - 語彙リスト。
-- `centroids_unit` _numpy.ndarray_ - クラスタ重心の単位ベクトル行列。
-- `top_n` _int_ - 返す語数。
-  
-
-**Returns**:
-
-  dict[int, list[tuple[str, float]]]: クラスタ ID ごとの語と類似度。
-
-<a id="quant_text_analysis.cluster.metrics.jaccard"></a>
-
-#### jaccard
-
-```python
-def jaccard(a: List[str] | set[str], b: List[str] | set[str]) -> float
-```
-
-2 集合間の Jaccard 係数を計算する。
-
-**Arguments**:
-
-- `a` _list[str] | set[str]_ - 一方の語集合。
-- `b` _list[str] | set[str]_ - もう一方の語集合。
-  
-
-**Returns**:
-
-- `float` - Jaccard 係数。双方空集合の場合は 1.0。
-
-<a id="quant_text_analysis.cluster.metrics.stability_top_terms_jaccard"></a>
-
-#### stability\_top\_terms\_jaccard
-
-```python
-def stability_top_terms_jaccard(per_doc_freqs: List[Dict[str, float]],
-                                *,
-                                k: int,
-                                svd_dim: int,
-                                rng: np.random.Generator,
-                                top_words_per_cluster: int = 20,
-                                max_iter: int = 300) -> float
-```
-
-クラスタ上位語集合の安定性を Jaccard 係数で測定する。
-
-**Arguments**:
-
-- `per_doc_freqs` _list[dict[str, float]]_ - 文書ごとの語確率分布。
-- `k` _int_ - クラスタ数。
-- `svd_dim` _int_ - SVD の潜在次元。
-- `rng` _numpy.random.Generator_ - 乱数生成器。
-- `top_words_per_cluster` _int_ - 各クラスタで抽出する上位語数。
-- `max_iter` _int_ - spherical k-means の最大反復回数。
-  
-
-**Returns**:
-
-- `float` - 対応付けたクラスタ間の Jaccard 係数平均。計算不能時は NaN。
+Cluster-level metrics computed from per-document frequency data.
 
 <a id="quant_text_analysis.cluster.metrics.abstract_cluster_ratio"></a>
 
 #### abstract\_cluster\_ratio
 
 ```python
-def abstract_cluster_ratio(per_doc_freqs: List[Dict[str, float]],
-                           vocab: List[str], labels: np.ndarray) -> np.ndarray
+def abstract_cluster_ratio(per_doc_freqs: List[PerDocFreq], vocab: List[str],
+                           labels: np.ndarray) -> np.ndarray
 ```
 
 文書ごとのクラスタ比率行列を算出する。
@@ -299,12 +236,16 @@ I/O:
 - CSV: Settings.csv_path に指定された書誌 CSV（要旨・年・手作業タグ列）
 書き込み:
 - outputs/vocab.json
-- outputs/PPMI_word_doc_VxD.npz
-- outputs/PPMI_word_word_VxV.npz
-- outputs/top_terms_k{K}.csv
-- outputs/labels_k{K}.csv
-- outputs/metrics_k{K}.json
-- outputs/abstract_ratio_k{K}.npy
+- outputs/PPMI_word_doc/svd_dim_{d}/top_terms_k{K}.csv
+- outputs/PPMI_word_doc/svd_dim_{d}/labels_k{K}.csv
+- outputs/PPMI_word_doc/svd_dim_{d}/metrics_k{K}.json
+- outputs/PPMI_word_doc/svd_dim_{d}/abstract_ratio_k{K}.npy
+- outputs/PPMI_word_doc/metrics.csv
+- outputs/PPMI_word_word/svd_dim_{d}/top_terms_k{K}.csv
+- outputs/PPMI_word_word/svd_dim_{d}/labels_k{K}.csv
+- outputs/PPMI_word_word/svd_dim_{d}/metrics_k{K}.json
+- outputs/PPMI_word_word/svd_dim_{d}/abstract_ratio_k{K}.npy
+- outputs/PPMI_word_word/metrics.csv
 
 設定:
 すべて `Settings` で指定します（パス、`k_list`, `svd_dim`, `random_seed` など）。
@@ -368,7 +309,6 @@ def main() -> None
 
 **Notes**:
 
-  - 文書ごとの相対頻度を平均化し、`Settings.top_n` と `Settings.min_docs` でフィルタする。
   - `Settings.out_dir` が設定されている場合に CSV を書き出す。
 
 <a id="quant_text_analysis.commands.phrases_cli"></a>
@@ -395,6 +335,44 @@ I/O:
 使用例:
 python -m quant_text_analysis.phrase_discovery
 python path/to/phrases_cli.py
+
+<a id="quant_text_analysis.commands.phrases_cli.simple_tokenize"></a>
+
+#### simple\_tokenize
+
+```python
+def simple_tokenize(text: str) -> List[str]
+```
+
+英字のみを対象にトークン化し、表記統一を行う。
+
+**Arguments**:
+
+- `text` _str_ - トークン化対象の文字列。
+  
+
+**Returns**:
+
+- `list[str]` - 小文字化・表記統一済みトークン列。
+
+<a id="quant_text_analysis.commands.phrases_cli.build_corpus"></a>
+
+#### build\_corpus
+
+```python
+def build_corpus(texts: Sequence[str]) -> List[List[str]]
+```
+
+文字列コーパスをトークン化済みコーポラへ変換する。
+
+**Arguments**:
+
+- `texts` _Sequence[str]_ - トークン化対象の文書列。
+  
+
+**Returns**:
+
+- `list[list[str]]` - トークン化された文書ごとのトークン列。
 
 <a id="quant_text_analysis.commands.phrases_cli.train_phrases"></a>
 
@@ -468,7 +446,7 @@ def count_phrase_usage(tokenized: Sequence[Sequence[str]],
 def main() -> None
 ```
 
-bigram と trigram の候補を学習し、統計を出力します。
+bigram と trigram の候補を学習し、統計を出力する。
 
 **Notes**:
 
@@ -478,6 +456,8 @@ bigram と trigram の候補を学習し、統計を出力します。
 <a id="quant_text_analysis.config"></a>
 
 # quant\_text\_analysis.config
+
+Factory helpers for default configuration values.
 
 <a id="quant_text_analysis.config.default_columns"></a>
 
@@ -510,6 +490,8 @@ def default_token_policy() -> TokenPolicy
 <a id="quant_text_analysis.data_types"></a>
 
 # quant\_text\_analysis.data\_types
+
+Shared dataclasses and protocols describing public data structures.
 
 <a id="quant_text_analysis.data_types.Columns"></a>
 
@@ -566,22 +548,6 @@ class RankingParams()
 - `top_n` _int_ - 表示する上位アイテム数。
 - `min_docs` _int_ - 最小出現文書数。
 
-<a id="quant_text_analysis.data_types.DocResult"></a>
-
-## DocResult Objects
-
-```python
-@dataclass(frozen=True)
-class DocResult()
-```
-
-1 文書に対するトークン集計結果。
-
-**Attributes**:
-
-- `tokens` _tuple[str, ...]_ - 文書内のトークン列。
-- `total` _int_ - トークン総数。
-
 <a id="quant_text_analysis.data_types.TokenLike"></a>
 
 ## TokenLike Objects
@@ -626,6 +592,7 @@ spaCy 互換 NLP モデルのインターフェース定義。
 ```python
 def get_or_svd_embedding(X_wd: ArrayLike,
                          *,
+                         svd_dim: int,
                          cfg: Optional[Settings] = None,
                          ppmi_cache_key: Optional[str] = None,
                          random_state: Optional[int] = None) -> np.ndarray
@@ -636,6 +603,7 @@ SVD 埋め込みをキャッシュから取得または計算して返す。
 **Arguments**:
 
 - `X_wd` _ArrayLike_ - 語×文書の PPMI 行列。
+- `svd_dim` _int_ - 生成する埋め込み次元。
 - `cfg` _Settings | None_ - 設定オブジェクト。None の場合は既定値を利用。
 - `ppmi_cache_key` _str | None_ - PPMI 計算時のキャッシュキー。
 - `random_state` _int | None_ - SVD の乱数シード。未指定時は設定値を使用。
@@ -654,11 +622,10 @@ SVD 埋め込みをキャッシュから取得または計算して返す。
 #### frequency\_rankings
 
 ```python
-def frequency_rankings(per_doc_freqs: List[Dict[str, float]],
-                       groups: Optional[List[Optional[str]]] = None,
-                       *,
-                       top_n: int,
-                       min_docs: int) -> Dict[str, pd.DataFrame]
+def frequency_rankings(
+        per_doc_freqs: List[Dict[str, float]],
+        groups: Optional[List[Optional[str]]] = None
+) -> Dict[str, pd.DataFrame]
 ```
 
 語相対頻度をグループ別に集計しランキングを生成する。
@@ -667,8 +634,6 @@ def frequency_rankings(per_doc_freqs: List[Dict[str, float]],
 
 - `per_doc_freqs` _list[dict[str, float]]_ - 文書ごとの語相対頻度分布。
 - `groups` _list[str | None] | None_ - 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
-- `top_n` _int_ - グループごとに保持する語数。
-- `min_docs` _int_ - 採用するために必要な最小出現文書数。
   
 
 **Returns**:
@@ -760,9 +725,39 @@ per-doc 頻度から PPMI を計算しキャッシュを活用して返す。
 
 - `PPMIOutputs` - 語彙・TF 行列・PPMI 行列のセット。キャッシュ利用時は `cache_key` を含む。
 
+<a id="quant_text_analysis.features.vocab_selection"></a>
+
+# quant\_text\_analysis.features.vocab\_selection
+
+Utilities for selecting the analysis vocabulary from per-document counts.
+
+<a id="quant_text_analysis.features.vocab_selection.build_filtered_tf_matrix"></a>
+
+#### build\_filtered\_tf\_matrix
+
+```python
+def build_filtered_tf_matrix(per_doc_freqs: List[PerDocFreq], *, top_n: int,
+                             min_docs: int) -> Tuple[sp.csr_matrix, List[str]]
+```
+
+文書ごとの語頻度辞書をベクトル化し、語彙をフィルタリングする。
+
+**Arguments**:
+
+- `per_doc_freqs` _list[dict[str, float]]_ - 文書ごとの語相対頻度辞書。
+- `top_n` _int_ - 残す語の最大語彙数。0 以下で空語彙を返す。
+- `min_docs` _int_ - 語が出現すべき最小文書数。
+  
+
+**Returns**:
+
+  tuple[sp.csr_matrix, list[str]]: フィルタ済みの文書-語行列と語彙リスト。
+
 <a id="quant_text_analysis.grouping"></a>
 
 # quant\_text\_analysis.grouping
+
+Grouping helpers used by frequency and clustering analyses.
 
 <a id="quant_text_analysis.grouping.period_group_year"></a>
 
@@ -806,6 +801,8 @@ def method_group(tags: Optional[str]) -> Optional[str]
 
 # quant\_text\_analysis.io.loader
 
+Data-loading helpers for reading prepared CSV corpora.
+
 <a id="quant_text_analysis.io.loader.load_df"></a>
 
 #### load\_df
@@ -845,39 +842,25 @@ def save_vocab(out_dir: Path, vocab: List[str]) -> None
 - `out_dir` _Path_ - 出力先ディレクトリ。
 - `vocab` _list[str]_ - 語彙リスト。
 
-<a id="quant_text_analysis.io.writers.save_ppmi"></a>
+<a id="quant_text_analysis.io.writers.save_cluster_terms"></a>
 
-#### save\_ppmi
-
-```python
-def save_ppmi(out_dir: Path, ppmi_wd: sp.spmatrix,
-              ppmi_ww: sp.spmatrix) -> None
-```
-
-PPMI 行列を NPZ 形式で保存する。
-
-**Arguments**:
-
-- `out_dir` _Path_ - 出力先ディレクトリ。
-- `ppmi_wd` _scipy.sparse.spmatrix_ - 語×文書の PPMI 行列。
-- `ppmi_ww` _scipy.sparse.spmatrix_ - 語×語の PPMI 行列。
-
-<a id="quant_text_analysis.io.writers.save_top_terms"></a>
-
-#### save\_top\_terms
+#### save\_cluster\_terms
 
 ```python
-def save_top_terms(out_dir: Path, k: int,
-                   top: Dict[int, List[Tuple[str, float]]]) -> Path
+def save_cluster_terms(out_dir: Path, k: int, vocab: List[str],
+                       labels: np.ndarray,
+                       silhouette_scores: np.ndarray) -> Path
 ```
 
-クラスタ上位語リストを CSV 形式で保存する。
+クラスタ語リストをシルエット指標付きで CSV に保存する。
 
 **Arguments**:
 
 - `out_dir` _Path_ - 出力先ディレクトリ。
 - `k` _int_ - クラスタ数。
-- `top` _dict[int, list[tuple[str, float]]]_ - クラスタ ID ごとの語と類似度。
+- `vocab` _list[str]_ - 語彙リスト。
+- `labels` _numpy.ndarray_ - 語彙に対応するクラスタラベル。
+- `silhouette_scores` _numpy.ndarray_ - 各語のシルエット値。
   
 
 **Returns**:
@@ -913,8 +896,7 @@ def save_labels(out_dir: Path, k: int, vocab: List[str],
 
 ```python
 def save_metrics(out_dir: Path, k: int, *, inertia: float,
-                 silhouette: Optional[float],
-                 stability_jaccard: Optional[float]) -> Path
+                 silhouette: Optional[float]) -> Path
 ```
 
 クラスタ評価指標を JSON 形式で保存する。
@@ -925,7 +907,6 @@ def save_metrics(out_dir: Path, k: int, *, inertia: float,
 - `k` _int_ - クラスタ数。
 - `inertia` _float_ - cos 慣性。
 - `silhouette` _float | None_ - cos シルエット。NaN は None に変換。
-- `stability_jaccard` _float | None_ - トップ語集合の Jaccard 安定性。
   
 
 **Returns**:
@@ -956,6 +937,64 @@ def save_cluster_ratio(out_dir: Path, k: int, M: np.ndarray) -> Path
 <a id="quant_text_analysis.preprocess.nlp_backend"></a>
 
 # quant\_text\_analysis.preprocess.nlp\_backend
+
+<a id="quant_text_analysis.preprocess.nlp_backend._SpacyTokenAdapter"></a>
+
+## \_SpacyTokenAdapter Objects
+
+```python
+class _SpacyTokenAdapter()
+```
+
+spaCy `Token` を薄くラップするアダプター。
+
+<a id="quant_text_analysis.preprocess.nlp_backend._SpacyTokenAdapter.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(token: Token) -> None
+```
+
+アダプターを初期化する。
+
+**Arguments**:
+
+- `token` _Token_ - ラップ対象の spaCy トークン。
+
+<a id="quant_text_analysis.preprocess.nlp_backend._SpacyDocAdapter"></a>
+
+## \_SpacyDocAdapter Objects
+
+```python
+class _SpacyDocAdapter()
+```
+
+spaCy `Doc` を `TokenLike` イテレーターに変換するアダプター。
+
+<a id="quant_text_analysis.preprocess.nlp_backend._SpacyDocAdapter.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(doc: Doc) -> None
+```
+
+アダプターを初期化する。
+
+**Arguments**:
+
+- `doc` _Doc_ - ラップ対象の spaCy ドキュメント。
+
+<a id="quant_text_analysis.preprocess.nlp_backend._SpacyDocAdapter.__iter__"></a>
+
+#### \_\_iter\_\_
+
+```python
+def __iter__() -> Iterator[TokenLike]
+```
+
+逐次的にトークンアダプターを生成する。
 
 <a id="quant_text_analysis.preprocess.nlp_backend.SpacyBackend"></a>
 
@@ -1027,17 +1066,19 @@ def build_normalizer(policy: TokenPolicy) -> Normalizer
 
 # quant\_text\_analysis.preprocess.perdoc
 
+Per-document token analysis with caching support.
+
 <a id="quant_text_analysis.preprocess.perdoc.analyze_docs"></a>
 
 #### analyze\_docs
 
 ```python
-def analyze_docs(
-        backend: NLPBackend, normalizer: Normalizer, texts: Sequence[str],
-        policy: TokenPolicy) -> Tuple[List[DocResult], List[Dict[str, float]]]
+def analyze_docs(backend: NLPBackend, normalizer: Normalizer,
+                 texts: Sequence[str],
+                 policy: TokenPolicy) -> List[PerDocFreq]
 ```
 
-文書群を解析し正規化トークン列と文書内相対頻度を求める。
+文書群を解析し文書内相対頻度を求める。
 
 **Arguments**:
 
@@ -1049,21 +1090,19 @@ def analyze_docs(
 
 **Returns**:
 
-  tuple[list[DocResult], list[dict[str, float]]]: 文書ごとの解析結果と語の相対頻度分布。
+  list[dict[str, float]]: 文書ごとの語の相対頻度分布。
 
 <a id="quant_text_analysis.preprocess.perdoc.get_or_analyze_docs"></a>
 
 #### get\_or\_analyze\_docs
 
 ```python
-def get_or_analyze_docs(
-    backend: NLPBackend,
-    normalizer: Normalizer,
-    texts: List[str],
-    policy: TokenPolicy,
-    *,
-    cache_dir: Optional[str] = None
-) -> Tuple[List[DocResult], List[Dict[str, float]]]
+def get_or_analyze_docs(backend: NLPBackend,
+                        normalizer: Normalizer,
+                        texts: List[str],
+                        policy: TokenPolicy,
+                        *,
+                        cache_dir: Optional[str] = None) -> List[PerDocFreq]
 ```
 
 文書解析結果をキャッシュから取得または新規生成する。
@@ -1079,7 +1118,7 @@ def get_or_analyze_docs(
 
 **Returns**:
 
-  tuple[list[DocResult], list[dict[str, float]]]: 文書ごとの解析結果と語の相対頻度分布。
+  list[dict[str, float]]: 文書ごとの語の相対頻度分布。
 
 <a id="quant_text_analysis.settings"></a>
 
@@ -1125,10 +1164,9 @@ def columns() -> Columns
 
 使用する列名設定を返す。
 
-Returns
--------
-Columns
-使用する列名設定を表す `Columns` インスタンス。
+**Returns**:
+
+- `Columns` - 使用する列名設定を表す `Columns` インスタンス。
 
 <a id="quant_text_analysis.settings.Settings.token_policy"></a>
 
@@ -1141,10 +1179,9 @@ def token_policy() -> TokenPolicy
 
 トークン正規化の設定を返す。
 
-Returns
--------
-TokenPolicy
-トークン正規化に用いる `TokenPolicy` 設定。
+**Returns**:
+
+- `TokenPolicy` - トークン正規化に用いる `TokenPolicy` 設定。
 
 <a id="quant_text_analysis.settings.Settings.ensure_out_dir"></a>
 
@@ -1156,8 +1193,32 @@ def ensure_out_dir() -> Path
 
 出力ディレクトリを確実に作成して返す。
 
-Returns
--------
-Path
-確実に存在する出力ディレクトリのパス。
+**Returns**:
+
+- `Path` - 確実に存在する出力ディレクトリのパス。
+
+<a id="quant_text_analysis.__main__"></a>
+
+# quant\_text\_analysis.\_\_main\_\_
+
+quant_text_analysis パッケージの CLI エントリーポイント。
+
+<a id="quant_text_analysis.__main__.main"></a>
+
+#### main
+
+```python
+def main(argv: List[str] | None = None) -> int
+```
+
+CLI 引数を解釈して対応するサブコマンドを実行する。
+
+**Arguments**:
+
+- `argv` _list[str] | None_ - サブコマンドとオプションの配列。None の場合は `sys.argv[1:]` を使用。
+  
+
+**Returns**:
+
+- `int` - サブコマンドの終了コード。
 

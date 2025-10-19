@@ -52,30 +52,28 @@ class Settings:
 
     # 語彙選定（PPMI 前段）
     top_n: int = 10_000
-    min_docs: int = 3
+    min_docs: int = 4
 
-    # 埋め込み次元（非対称PPMI→SVD）
-    svd_dim: int = 200
+    # 埋め込み次元（TruncatedSVD）
+
     svd_dim_list: Tuple[int, ...] = (25,)
 
     # クラスタリング
-    k_list: Tuple[int, ...] = (32,)
+    k_list: Tuple[int, ...] = (16, 19, 21, 25, 28, 31, 34, 37)
     n_init: int = 20
     max_iter: int = 300
     random_seed: int = 42
 
     # 出力
-    top_words_per_cluster: int = 20
+    top_words_per_cluster: int = 200
 
     # 列名・正規化ポリシ（注入ポイント）
     @property
     def columns(self) -> Columns:
         """使用する列名設定を返す。
 
-        Returns
-        -------
-        Columns
-            使用する列名設定を表す `Columns` インスタンス。
+        Returns:
+            Columns: 使用する列名設定を表す `Columns` インスタンス。
         """
         return default_columns()
 
@@ -83,20 +81,16 @@ class Settings:
     def token_policy(self) -> TokenPolicy:
         """トークン正規化の設定を返す。
 
-        Returns
-        -------
-        TokenPolicy
-            トークン正規化に用いる `TokenPolicy` 設定。
+        Returns:
+            TokenPolicy: トークン正規化に用いる `TokenPolicy` 設定。
         """
         return default_token_policy()
 
     def ensure_out_dir(self) -> Path:
         """出力ディレクトリを確実に作成して返す。
 
-        Returns
-        -------
-        Path
-            確実に存在する出力ディレクトリのパス。
+        Returns:
+            Path: 確実に存在する出力ディレクトリのパス。
         """
         self.out_dir.mkdir(parents=True, exist_ok=True)
         return self.out_dir

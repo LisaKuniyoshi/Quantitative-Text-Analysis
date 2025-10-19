@@ -25,6 +25,8 @@ from __future__ import annotations
 
 from typing import List
 
+import pandas as pd
+
 from ..settings import Settings
 from ..io.loader import load_df
 from ..grouping import period_group_year, method_group
@@ -33,7 +35,7 @@ from ..preprocess.normalize import build_normalizer
 from ..features.frequency import frequency_rankings
 from ..preprocess.perdoc import get_or_analyze_docs
 
-s = Settings()
+s: Settings = Settings()
 cols = s.columns
 policy = s.token_policy
 
@@ -44,7 +46,7 @@ def main() -> None:
     Notes:
         - `Settings.out_dir` が設定されている場合に CSV を書き出す。
     """
-    df = load_df(str(s.csv_path), cols)
+    df: pd.DataFrame = load_df(str(s.csv_path), cols)
     df["period"] = df["year"].map(period_group_year)
     df["method"] = df["manual_tags"].map(method_group)
 

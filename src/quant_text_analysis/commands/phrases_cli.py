@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
+import re
 
 from breame.spelling import get_american_spelling
 import pandas as pd
@@ -45,11 +46,28 @@ TOP_N_PRINT: int = 100
 
 # ---- 素朴トークナイザ（英字のみ） ----
 def simple_tokenize(text: str) -> List[str]:
-    import re
+    """英字のみを対象にトークン化し、表記統一を行う。
+
+    Args:
+        text (str): トークン化対象の文字列。
+
+    Returns:
+        list[str]: 小文字化・表記統一済みトークン列。
+    """
+
     tokens = re.sub(r"[^a-z]+", " ", text.lower()).split()
     return [get_american_spelling(tok) for tok in tokens]
 
 def build_corpus(texts: Sequence[str]) -> List[List[str]]:
+    """文字列コーパスをトークン化済みコーポラへ変換する。
+
+    Args:
+        texts (Sequence[str]): トークン化対象の文書列。
+
+    Returns:
+        list[list[str]]: トークン化された文書ごとのトークン列。
+    """
+
     return [simple_tokenize(t) for t in texts]
 
 # ---- Phrases 学習と候補抽出 ----
@@ -137,7 +155,7 @@ def count_phrase_usage(
 
 # ---- 実行本体 ----
 def main() -> None:
-    """bigram と trigram の候補を学習し、統計を出力します。
+    """bigram と trigram の候補を学習し、統計を出力する。
 
     Notes:
         - bi→tri の順に適用し、モデルの `export_phrases()` と実使用回数をマージする。
@@ -146,7 +164,7 @@ def main() -> None:
     settings.ensure_out_dir()
 
     cols = default_columns()
-    df = load_df(str(Settings.csv_path), cols)
+    df = load_df(str(settings.csv_path), cols)
     texts: List[str] = df["abstract"].fillna("").astype(str).tolist()
 
     corpus = build_corpus(texts)

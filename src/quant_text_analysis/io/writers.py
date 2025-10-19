@@ -1,5 +1,6 @@
 # quant_text_analysis/cluster/io.py
 from __future__ import annotations
+
 import json
 import math
 from pathlib import Path
@@ -7,7 +8,6 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-import scipy.sparse as sp
 
 def save_vocab(out_dir: Path, vocab: List[str]) -> None:
     """語彙リストを JSON 形式で保存する。
@@ -22,12 +22,13 @@ def save_vocab(out_dir: Path, vocab: List[str]) -> None:
         encoding="utf-8"
     )
 
+
 def save_cluster_terms(
     out_dir: Path,
     k: int,
     vocab: List[str],
     labels: np.ndarray,
-    silhouette_scores,
+    silhouette_scores: np.ndarray,
 ) -> Path:
     """クラスタ語リストをシルエット指標付きで CSV に保存する。
 

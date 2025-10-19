@@ -8,7 +8,7 @@
 
 1. **頻出語分析** (`freq`) - 文書内相対頻度に基づく頻出語のランキング
 2. **フレーズ抽出** (`phrases`) - Gensim Phrasesを用いたbigram/trigramの候補抽出
-3. **単語クラスタリング** (`cluster`) - PPMI→SVD→球面k-meansによる単語のクラスタリング
+3. **単語クラスタリング** (`cluster`) - 文書×語頻度を SVD で次元削減し、球面 k-means で単語をクラスタリング
 
 ## 必要な環境
 
@@ -93,7 +93,7 @@ python -m quant_text_analysis phrases
 
 ### 3. 単語クラスタリング (cluster)
 
-語×文書PPMIと語×語PPMIを計算し、SVDによる語埋め込みを経て、球面k-meansでクラスタリングを実行します。
+語×文書頻度行列から Truncated SVD で語埋め込みを生成し、L2 正規化後に球面 k-means でクラスタリングを実行します。
 
 ```bash
 python -m quant_text_analysis cluster
@@ -101,16 +101,15 @@ python -m quant_text_analysis cluster
 
 **出力ファイル:**
 - `outputs/{タイムスタンプ}/vocab.json` - 語彙リスト
-- `outputs/{タイムスタンプ}/PPMI_word_doc_VxD.npz` - 語×文書PPMI行列
-- `outputs/{タイムスタンプ}/PPMI_word_word_VxV.npz` - 語×語PPMI行列
-- `outputs/{タイムスタンプ}/top_terms_k{K}.csv` - 各クラスタの上位語
-- `outputs/{タイムスタンプ}/labels_k{K}.csv` - 単語のクラスタラベル
-- `outputs/{タイムスタンプ}/metrics_k{K}.json` - クラスタリング評価指標
-- `outputs/{タイムスタンプ}/abstract_ratio_k{K}.npy` - 文書×クラスタ比率行列
+- `outputs/{タイムスタンプ}/metrics.csv` - 各次元・クラスタ設定のサマリ
+- `outputs/{タイムスタンプ}/svd_dim_{次元}/cluster_terms_k{K}.csv` - クラスタごとの語とシルエット値
+- `outputs/{タイムスタンプ}/svd_dim_{次元}/labels_k{K}.csv` - 単語のクラスタ割当
+- `outputs/{タイムスタンプ}/svd_dim_{次元}/metrics_k{K}.json` - クラスタリング評価指標
+- `outputs/{タイムスタンプ}/svd_dim_{次元}/abstract_ratio_k{K}.npy` - 文書×クラスタ比率行列
 
 **デフォルト設定:**
-- クラスタ数: k=12, 16, 20
-- SVD次元数: 200
+- クラスタ数: k=16, 19, 21, 25, 28, 31, 34, 37
+- SVD次元数: 25（`svd_dim_list` で複数指定可）
 - k-meansの初期化回数: 20
 - 最大反復回数: 300
 
@@ -129,19 +128,16 @@ spacy_model: str = "en_core_web_sm"
 
 # 語彙選定
 top_n: int = 10_000          # 保持する上位語数
-min_docs: int = 7            # 最小文書出現数
+min_docs: int = 4            # 最小文書出現数
 
 # 埋め込み
-svd_dim: int = 200           # SVD次元数
+svd_dim_list: Tuple[int, ...] = (25,)  # 試行する SVD 次元
 
 # クラスタリング
-k_list: Tuple[int, ...] = (12, 16, 20)  # クラスタ数候補
+k_list: Tuple[int, ...] = (16, 19, 21, 25, 28, 31, 34, 37)  # クラスタ数候補
 n_init: int = 20             # k-means初期化回数
 max_iter: int = 300          # 最大反復回数
 random_seed: int = 42        # 乱数シード
-
-# 出力
-top_words_per_cluster: int = 20  # クラスタごとの上位語数
 ```
 
 ## プロジェクト構造
@@ -182,9 +178,8 @@ Quantitative-Text-Analysis/
 ## キャッシュ機能
 
 計算コストの高い処理結果は `data/cache/` ディレクトリにキャッシュされます：
-- 文書ごとの頻度情報
-- PPMI行列
-- SVD結果
+- 文書ごとの頻度情報 (`per_doc_freqs`)
+- Truncated SVD による語埋め込み
 
 同じデータで複数回実行する場合、キャッシュが活用され処理が高速化されます。
 
@@ -192,9 +187,9 @@ Quantitative-Text-Analysis/
 
 - **英米表記統一**: breameライブラリによる自動的な表記統一
 - **形態素解析**: spaCyによる高速で正確なトークン化
-- **PPMI**: Positive Pointwise Mutual Informationによる単語共起の重み付け
-- **球面k-means**: L2正規化された埋め込みベクトルに対するコサイン距離ベースのクラスタリング
-- **評価指標**: シルエットスコア、Jaccard安定性など複数の指標による評価
+- **SVD埋め込み**: Truncated SVD による語ベクトル表現と再利用可能なキャッシュ
+- **球面k-means**: L2 正規化後の語埋め込みをコサイン距離でクラスタリング
+- **評価指標**: cos シルエットやクラスタ慣性を計算し、各クラスタの語ランキングを保存
 
 ## ライセンス
 

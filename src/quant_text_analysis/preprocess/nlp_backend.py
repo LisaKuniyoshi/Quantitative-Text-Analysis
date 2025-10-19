@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Iterable, Iterator
 
 import spacy
@@ -5,21 +7,44 @@ from spacy.tokens import Doc, Token
 
 from ..data_types import DocLike, TokenLike
 
+
 class _SpacyTokenAdapter:
+    """spaCy `Token` を薄くラップするアダプター。"""
+
     __slots__ = ("text", "ent_type_", "pos_", "lemma_")
-    def __init__(self, token: "Token") -> None:
+
+    def __init__(self, token: Token) -> None:
+        """アダプターを初期化する。
+
+        Args:
+            token (Token): ラップ対象の spaCy トークン。
+        """
+
         self.text = token.text
         self.ent_type_ = token.ent_type_
         self.pos_ = token.pos_
         self.lemma_ = token.lemma_
 
+
 class _SpacyDocAdapter:
-    __slots__ = ("_d",)
-    def __init__(self, doc: "Doc") -> None:
-        self._d = doc
+    """spaCy `Doc` を `TokenLike` イテレーターに変換するアダプター。"""
+
+    __slots__ = ("_doc",)
+
+    def __init__(self, doc: Doc) -> None:
+        """アダプターを初期化する。
+
+        Args:
+            doc (Doc): ラップ対象の spaCy ドキュメント。
+        """
+
+        self._doc = doc
+
     def __iter__(self) -> Iterator[TokenLike]:
-        for tok in self._d:
-            yield _SpacyTokenAdapter(tok)
+        """逐次的にトークンアダプターを生成する。"""
+
+        for token in self._doc:
+            yield _SpacyTokenAdapter(token)
 
 class SpacyBackend:
     """spaCy モデルを用いて文書解析を行うバックエンド。"""

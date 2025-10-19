@@ -1,3 +1,5 @@
+"""Utilities for selecting the analysis vocabulary from per-document counts."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Tuple
@@ -6,9 +8,11 @@ import numpy as np
 import scipy.sparse as sp
 from sklearn.feature_extraction import DictVectorizer
 
+PerDocFreq = Dict[str, float]
+
 
 def build_filtered_tf_matrix(
-    per_doc_freqs: List[Dict[str, float]],
+    per_doc_freqs: List[PerDocFreq],
     *,
     top_n: int,
     min_docs: int,
@@ -16,9 +20,9 @@ def build_filtered_tf_matrix(
     """文書ごとの語頻度辞書をベクトル化し、語彙をフィルタリングする。
 
     Args:
-        per_doc_freqs: 文書ごとの語相対頻度辞書のリスト。
-        top_n: 残す語の最大語彙数。
-        min_docs: 語が出現すべき最小文書数。
+        per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度辞書。
+        top_n (int): 残す語の最大語彙数。0 以下で空語彙を返す。
+        min_docs (int): 語が出現すべき最小文書数。
 
     Returns:
         tuple[sp.csr_matrix, list[str]]: フィルタ済みの文書-語行列と語彙リスト。

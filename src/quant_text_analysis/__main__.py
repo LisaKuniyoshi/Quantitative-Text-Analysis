@@ -1,4 +1,5 @@
-# src/quant_text_analysis/__main__.py
+"""quant_text_analysis パッケージの CLI エントリーポイント。"""
+
 from __future__ import annotations
 
 import importlib
@@ -8,6 +9,18 @@ from typing import List
 
 
 def _dispatch(module_path: str) -> int:
+    """モジュールを読み込み `main` 関数を呼び出す。
+
+    Args:
+        module_path (str): `main` を含むサブコマンドモジュールのドット区切りパス。
+
+    Returns:
+        int: サブコマンドが返した終了コード。未指定の場合は 0。
+
+    Raises:
+        SystemExit: `main` が存在しない、または呼び出せない場合。
+    """
+
     mod = importlib.import_module(module_path)
     entry = getattr(mod, "main", None)
     if entry is None or not callable(entry):
@@ -17,6 +30,15 @@ def _dispatch(module_path: str) -> int:
 
 
 def main(argv: List[str] | None = None) -> int:
+    """CLI 引数を解釈して対応するサブコマンドを実行する。
+
+    Args:
+        argv (list[str] | None): サブコマンドとオプションの配列。None の場合は `sys.argv[1:]` を使用。
+
+    Returns:
+        int: サブコマンドの終了コード。
+    """
+
     if argv is None:
         argv = sys.argv[1:]
 
@@ -36,5 +58,5 @@ def main(argv: List[str] | None = None) -> int:
     return _dispatch(getattr(ns, "_module"))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - CLI エントリーポイント
     sys.exit(main())

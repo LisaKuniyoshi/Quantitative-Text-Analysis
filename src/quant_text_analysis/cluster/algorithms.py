@@ -1,5 +1,7 @@
-# quant_text_analysis/cluster/algorithms.py
+"""球面 k-means クラスタリングで利用する補助モジュール。"""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -8,6 +10,7 @@ import scipy.sparse as sp
 from sklearn.preprocessing import normalize as sk_normalize
 
 _L2_NORM = "l2"
+
 
 def l2_normalize_rows(X: np.ndarray) -> np.ndarray:
     """行方向に L2 正規化を施した行列を返す。
@@ -18,6 +21,7 @@ def l2_normalize_rows(X: np.ndarray) -> np.ndarray:
     Returns:
         numpy.ndarray: 各行のノルムが 1 となる行列。
     """
+
     if sp.issparse(X):
         X_csr = sp.csr_matrix(X)
         X_norm = sk_normalize(X_csr, norm=_L2_NORM, axis=1, copy=False)
@@ -53,9 +57,15 @@ class SKMeansResult:
     inertia_: float               # Σ(1 - cos)
 
 def _kmeanspp_cos(X_unit: np.ndarray, k: int, rng: np.random.Generator) -> np.ndarray:
-    """
-    cos 距離版 k-means++ 初期化。
-    返り値は (k, d) の単位ベクトル。
+    """cos 距離に基づく k-means++ 初期化を実行する。
+
+    Args:
+        X_unit (numpy.ndarray): 行方向に単位化されたサンプル行列 (n_samples, d)。
+        k (int): 初期化するクラスタ中心数。
+        rng (numpy.random.Generator): 乱数生成器。
+
+    Returns:
+        numpy.ndarray: 形状 (k, d) の単位ベクトル中心。
     """
     n, d = X_unit.shape
     centers = np.empty((k, d), dtype=X_unit.dtype)
@@ -100,7 +110,7 @@ def spherical_kmeans(
     if rng is None:
         rng = np.random.default_rng()
 
-    n, d = X_unit.shape
+    n, _ = X_unit.shape
     best: Optional[SKMeansResult] = None
 
     for _ in range(n_init):
@@ -130,5 +140,6 @@ def spherical_kmeans(
         if best is None or res.inertia_ < best.inertia_:
             best = res
 
-    assert best is not None
+    if best is None:
+        raise RuntimeError("有効な spherical k-means 解の探索に失敗しました。")
     return best

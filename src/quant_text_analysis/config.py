@@ -1,5 +1,10 @@
+"""Factory helpers for default configuration values."""
+
 from __future__ import annotations
-from .data_types import TokenPolicy, Columns
+
+from typing import Tuple
+
+from .data_types import Columns, TokenPolicy
 
 def default_columns() -> Columns:
     """既定の列名設定を返す。
@@ -15,7 +20,7 @@ def default_token_policy() -> TokenPolicy:
     Returns:
         TokenPolicy: 既定のトークン正規化ポリシーを表す `TokenPolicy` インスタンス。
     """
-    forced = (
+    forced: Tuple[Tuple[str, ...], ...] = (
         ("autistic", "trait"),
         ("mental", "health"),
         ("autism", "spectrum", "disorder"),

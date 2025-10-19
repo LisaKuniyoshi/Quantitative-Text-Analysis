@@ -31,26 +31,30 @@ I/O:
     >>> python path/to/cluster_cli.py
 """
 from __future__ import annotations
+
 import csv
-from typing import List
+from typing import Dict, List
 
 import numpy as np
-from numpy.typing import ArrayLike
 from numpy.random import default_rng
 from sklearn.metrics import silhouette_score, silhouette_samples
 
-from ..settings import Settings
+from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
+from ..cluster.metrics import abstract_cluster_ratio
+from ..features.embeddings import get_or_svd_embedding
+from ..features.vocab_selection import build_filtered_tf_matrix
 from ..io.loader import load_df
+from ..io.writers import (
+    save_cluster_ratio,
+    save_labels,
+    save_metrics,
+    save_cluster_terms,
+    save_vocab,
+)
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
 from ..preprocess.perdoc import get_or_analyze_docs
-from ..cluster.algorithms import l2_normalize_rows, spherical_kmeans
-from ..cluster.metrics import abstract_cluster_ratio
-from ..io.writers import (
-    save_vocab, save_cluster_terms, save_labels, save_metrics, save_cluster_ratio
-)
-from ..features.embeddings import get_or_svd_embedding
-from ..features.vocab_selection import build_filtered_tf_matrix
+from ..settings import Settings
 
 
 def main() -> None:
@@ -87,7 +91,7 @@ def main() -> None:
 
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    metrics_rows = []
+    metrics_rows: List[Dict[str, float | int]] = []
 
     for d in s.svd_dim_list:
         out_dir_dim = out_dir / f"svd_dim_{d}"
@@ -109,7 +113,13 @@ def main() -> None:
             labels = res.labels_.astype(int)
 
             # 語スコア（silhouette）保存
-            sil_samples: ArrayLike = silhouette_samples(Z, labels, metric="cosine")
+            try:
+                sil_samples = np.asarray(
+                    silhouette_samples(Z, labels, metric="cosine"),
+                    dtype=float,
+                )
+            except Exception:
+                sil_samples = np.full(labels.shape, np.nan, dtype=float)
 
             save_cluster_terms(out_dir_dim, k, vocab, labels, sil_samples)
             save_labels(out_dir_dim, k, vocab, labels)
