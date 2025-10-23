@@ -10,8 +10,8 @@ I/O:
         - CSV: Settings.csv_path
     書き込み:
         - outputs/top_words_overall.csv
-        - outputs/top_words_period_{グループ名}.csv
-        - outputs/top_words_method_{グループ名}.csv
+        - outputs/top_words_periods.csv
+        - outputs/top_words_methods.csv
 
 グルーピング:
     - 年代: "2014–2021" / "2022–2023" / "2024–2025"
@@ -74,10 +74,28 @@ def main() -> None:
     if s.out_dir is not None:
         s.out_dir.mkdir(parents=True, exist_ok=True)
         overall["ALL"].to_csv(s.out_dir / "top_words_overall.csv", index=False)
-        for g, dfr in period.items():
-            dfr.to_csv(s.out_dir / f"top_words_period_{g}.csv", index=False)
-        for g, dfr in method.items():
-            dfr.to_csv(s.out_dir / f"top_words_method_{g}.csv", index=False)
+        def _concat_side_by_side(grouped: dict[str, pd.DataFrame]) -> pd.DataFrame:
+            if not grouped:
+                return pd.DataFrame()
+
+            max_rows = max(len(frame) for frame in grouped.values())
+            pieces: List[pd.DataFrame] = []
+            for group_name, frame in grouped.items():
+                expanded = frame.reset_index(drop=True).reindex(range(max_rows))
+                renamed = expanded.rename(columns={
+                    "word": f"{group_name}_word",
+                    "mean_freq": f"{group_name}_mean_freq",
+                    "n_docs_nonzero": f"{group_name}_n_docs_nonzero",
+                    "doc_rate_nonzero": f"{group_name}_doc_rate_nonzero",
+                })
+                pieces.append(renamed)
+
+            return pd.concat(pieces, axis=1)
+
+        period_df = _concat_side_by_side(period)
+        method_df = _concat_side_by_side(method)
+        period_df.to_csv(s.out_dir / "top_words_periods.csv", index=False)
+        method_df.to_csv(s.out_dir / "top_words_methods.csv", index=False)
 
 if __name__ == "__main__":
     main()
