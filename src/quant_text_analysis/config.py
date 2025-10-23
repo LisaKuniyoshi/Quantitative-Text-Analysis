@@ -77,7 +77,6 @@ def default_token_policy() -> TokenPolicy:
         ("posttraumatic", "stress"),
         ("social", "norm"),
         ("mediation", "analysis"),
-        ("mediation", "analyzes"),  # analysesの誤変換
         ("mix", "method"),
         ("neurodivergent", "trait"),
         ("executive", "function"),
