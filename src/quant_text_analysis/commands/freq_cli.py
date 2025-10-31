@@ -33,7 +33,7 @@ from ..grouping import period_group_year, method_group
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
 from ..features.frequency import frequency_rankings
-from ..preprocess.perdoc import get_or_analyze_docs
+from ..preprocess.perdoc import analyze_docs_with_cache, compute_term_frequencies
 
 s: Settings = Settings()
 cols = s.columns
@@ -54,9 +54,10 @@ def main() -> None:
     normalizer = build_normalizer(policy)
 
     abstracts: List[str] = df["abstract"].fillna("").tolist()
-    per_doc_freqs = get_or_analyze_docs(
+    tokenized_docs = analyze_docs_with_cache(
         backend, normalizer, abstracts, policy, cache_dir=str(s.cache_dir)
     )
+    per_doc_freqs = compute_term_frequencies(tokenized_docs)
 
     overall = frequency_rankings(per_doc_freqs, None)
     period = frequency_rankings(per_doc_freqs, df["period"].tolist())

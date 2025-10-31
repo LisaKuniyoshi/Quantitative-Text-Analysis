@@ -53,7 +53,7 @@ from ..io.writers import (
 )
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
-from ..preprocess.perdoc import get_or_analyze_docs
+from ..preprocess.perdoc import analyze_docs_with_cache, compute_term_frequencies
 from ..settings import Settings
 
 
@@ -75,9 +75,10 @@ def main() -> None:
     # 形態素＋正規化（キャッシュ利用）
     backend = SpacyBackend(model=s.spacy_model)
     normalizer = build_normalizer(s.token_policy)
-    per_doc_freqs = get_or_analyze_docs(
+    tokenized_docs = analyze_docs_with_cache(
         backend, normalizer, texts, s.token_policy, cache_dir=str(s.cache_dir)
     )
+    per_doc_freqs = compute_term_frequencies(tokenized_docs)
 
 
     X_tf, vocab = build_filtered_tf_matrix(

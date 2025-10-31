@@ -1,85 +1,85 @@
 # Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [quant\_text\_analysis.cluster.algorithms](#quant_text_analysisclusteralgorithms)
-      - [l2\_normalize\_rows](#l2_normalize_rows)
-      - [cosine\_inertia](#cosine_inertia)
-  - [SKMeansResult Objects](#skmeansresult-objects)
-      - [labels\_](#labels_)
-      - [centroids\_](#centroids_)
-      - [inertia\_](#inertia_)
-      - [spherical\_kmeans](#spherical_kmeans)
-- [quant\_text\_analysis.cluster.metrics](#quant_text_analysisclustermetrics)
-      - [abstract\_cluster\_ratio](#abstract_cluster_ratio)
-- [quant\_text\_analysis.commands.cluster\_cli](#quant_text_analysiscommandscluster_cli)
-      - [main](#main)
-- [quant\_text\_analysis.commands.freq\_cli](#quant_text_analysiscommandsfreq_cli)
-      - [main](#main-1)
-- [quant\_text\_analysis.commands.phrases\_cli](#quant_text_analysiscommandsphrases_cli)
-      - [simple\_tokenize](#simple_tokenize)
-      - [build\_corpus](#build_corpus)
-      - [train\_phrases](#train_phrases)
-      - [phrase\_df\_from\_model](#phrase_df_from_model)
-      - [count\_phrase\_usage](#count_phrase_usage)
-      - [main](#main-2)
-- [quant\_text\_analysis.config](#quant_text_analysisconfig)
-      - [default\_columns](#default_columns)
-      - [default\_token\_policy](#default_token_policy)
-- [quant\_text\_analysis.data\_types](#quant_text_analysisdata_types)
-  - [Columns Objects](#columns-objects)
-  - [TokenPolicy Objects](#tokenpolicy-objects)
-  - [RankingParams Objects](#rankingparams-objects)
-  - [TokenLike Objects](#tokenlike-objects)
-  - [DocLike Objects](#doclike-objects)
-  - [NLPBackend Objects](#nlpbackend-objects)
-- [quant\_text\_analysis.features.embeddings](#quant_text_analysisfeaturesembeddings)
-      - [get\_or\_svd\_embedding](#get_or_svd_embedding)
-- [quant\_text\_analysis.features.frequency](#quant_text_analysisfeaturesfrequency)
-      - [frequency\_rankings](#frequency_rankings)
-- [quant\_text\_analysis.features.ppmi](#quant_text_analysisfeaturesppmi)
-      - [EPS](#eps)
-  - [PPMIOutputs Objects](#ppmioutputs-objects)
-      - [vocab](#vocab)
-      - [doc\_ids](#doc_ids)
-      - [X\_tf](#x_tf)
-      - [ppmi\_word\_doc](#ppmi_word_doc)
-      - [ppmi\_word\_word](#ppmi_word_word)
-      - [cache\_key](#cache_key)
-      - [get\_or\_compute\_ppmi](#get_or_compute_ppmi)
-- [quant\_text\_analysis.features.vocab\_selection](#quant_text_analysisfeaturesvocab_selection)
-      - [build\_filtered\_tf\_matrix](#build_filtered_tf_matrix)
-- [quant\_text\_analysis.grouping](#quant_text_analysisgrouping)
-      - [period\_group\_year](#period_group_year)
-      - [method\_group](#method_group)
-- [quant\_text\_analysis.io.loader](#quant_text_analysisioloader)
-      - [load\_df](#load_df)
-- [quant\_text\_analysis.io.writers](#quant_text_analysisiowriters)
-      - [save\_vocab](#save_vocab)
-      - [save\_cluster\_terms](#save_cluster_terms)
-      - [save\_labels](#save_labels)
-      - [save\_metrics](#save_metrics)
-      - [save\_cluster\_ratio](#save_cluster_ratio)
-- [quant\_text\_analysis.preprocess.nlp\_backend](#quant_text_analysispreprocessnlp_backend)
-  - [\_SpacyTokenAdapter Objects](#_spacytokenadapter-objects)
-      - [\_\_init\_\_](#__init__)
-  - [\_SpacyDocAdapter Objects](#_spacydocadapter-objects)
-      - [\_\_init\_\_](#__init__-1)
-      - [\_\_iter\_\_](#__iter__)
-  - [SpacyBackend Objects](#spacybackend-objects)
-      - [\_\_init\_\_](#__init__-2)
-      - [pipe](#pipe)
-- [quant\_text\_analysis.preprocess.normalize](#quant_text_analysispreprocessnormalize)
-      - [build\_normalizer](#build_normalizer)
-- [quant\_text\_analysis.preprocess.perdoc](#quant_text_analysispreprocessperdoc)
-      - [analyze\_docs](#analyze_docs)
-      - [get\_or\_analyze\_docs](#get_or_analyze_docs)
-- [quant\_text\_analysis.settings](#quant_text_analysissettings)
-  - [Settings Objects](#settings-objects)
-      - [columns](#columns)
-      - [token\_policy](#token_policy)
-      - [ensure\_out\_dir](#ensure_out_dir)
-- [quant\_text\_analysis.\_\_main\_\_](#quant_text_analysis__main__)
-      - [main](#main-3)
+* [quant\_text\_analysis.cluster.algorithms](#quant_text_analysis.cluster.algorithms)
+  * [l2\_normalize\_rows](#quant_text_analysis.cluster.algorithms.l2_normalize_rows)
+  * [cosine\_inertia](#quant_text_analysis.cluster.algorithms.cosine_inertia)
+  * [SKMeansResult](#quant_text_analysis.cluster.algorithms.SKMeansResult)
+    * [labels\_](#quant_text_analysis.cluster.algorithms.SKMeansResult.labels_)
+    * [centroids\_](#quant_text_analysis.cluster.algorithms.SKMeansResult.centroids_)
+    * [inertia\_](#quant_text_analysis.cluster.algorithms.SKMeansResult.inertia_)
+  * [spherical\_kmeans](#quant_text_analysis.cluster.algorithms.spherical_kmeans)
+* [quant\_text\_analysis.cluster.metrics](#quant_text_analysis.cluster.metrics)
+  * [abstract\_cluster\_ratio](#quant_text_analysis.cluster.metrics.abstract_cluster_ratio)
+* [quant\_text\_analysis.commands.cluster\_cli](#quant_text_analysis.commands.cluster_cli)
+  * [main](#quant_text_analysis.commands.cluster_cli.main)
+* [quant\_text\_analysis.commands.freq\_cli](#quant_text_analysis.commands.freq_cli)
+  * [main](#quant_text_analysis.commands.freq_cli.main)
+* [quant\_text\_analysis.commands.phrases\_cli](#quant_text_analysis.commands.phrases_cli)
+  * [simple\_tokenize](#quant_text_analysis.commands.phrases_cli.simple_tokenize)
+  * [build\_corpus](#quant_text_analysis.commands.phrases_cli.build_corpus)
+  * [train\_phrases](#quant_text_analysis.commands.phrases_cli.train_phrases)
+  * [phrase\_df\_from\_model](#quant_text_analysis.commands.phrases_cli.phrase_df_from_model)
+  * [count\_phrase\_usage](#quant_text_analysis.commands.phrases_cli.count_phrase_usage)
+  * [main](#quant_text_analysis.commands.phrases_cli.main)
+* [quant\_text\_analysis.config](#quant_text_analysis.config)
+  * [default\_columns](#quant_text_analysis.config.default_columns)
+  * [default\_token\_policy](#quant_text_analysis.config.default_token_policy)
+* [quant\_text\_analysis.data\_types](#quant_text_analysis.data_types)
+  * [Columns](#quant_text_analysis.data_types.Columns)
+  * [TokenPolicy](#quant_text_analysis.data_types.TokenPolicy)
+  * [RankingParams](#quant_text_analysis.data_types.RankingParams)
+  * [TokenLike](#quant_text_analysis.data_types.TokenLike)
+  * [DocLike](#quant_text_analysis.data_types.DocLike)
+  * [NLPBackend](#quant_text_analysis.data_types.NLPBackend)
+* [quant\_text\_analysis.features.embeddings](#quant_text_analysis.features.embeddings)
+  * [get\_or\_svd\_embedding](#quant_text_analysis.features.embeddings.get_or_svd_embedding)
+* [quant\_text\_analysis.features.frequency](#quant_text_analysis.features.frequency)
+  * [frequency\_rankings](#quant_text_analysis.features.frequency.frequency_rankings)
+* [quant\_text\_analysis.features.ppmi](#quant_text_analysis.features.ppmi)
+  * [EPS](#quant_text_analysis.features.ppmi.EPS)
+  * [PPMIOutputs](#quant_text_analysis.features.ppmi.PPMIOutputs)
+    * [vocab](#quant_text_analysis.features.ppmi.PPMIOutputs.vocab)
+    * [doc\_ids](#quant_text_analysis.features.ppmi.PPMIOutputs.doc_ids)
+    * [X\_tf](#quant_text_analysis.features.ppmi.PPMIOutputs.X_tf)
+    * [ppmi\_word\_doc](#quant_text_analysis.features.ppmi.PPMIOutputs.ppmi_word_doc)
+    * [ppmi\_word\_word](#quant_text_analysis.features.ppmi.PPMIOutputs.ppmi_word_word)
+    * [cache\_key](#quant_text_analysis.features.ppmi.PPMIOutputs.cache_key)
+  * [get\_or\_compute\_ppmi](#quant_text_analysis.features.ppmi.get_or_compute_ppmi)
+* [quant\_text\_analysis.features.vocab\_selection](#quant_text_analysis.features.vocab_selection)
+  * [build\_filtered\_tf\_matrix](#quant_text_analysis.features.vocab_selection.build_filtered_tf_matrix)
+* [quant\_text\_analysis.grouping](#quant_text_analysis.grouping)
+  * [period\_group\_year](#quant_text_analysis.grouping.period_group_year)
+  * [method\_group](#quant_text_analysis.grouping.method_group)
+* [quant\_text\_analysis.io.loader](#quant_text_analysis.io.loader)
+  * [load\_df](#quant_text_analysis.io.loader.load_df)
+* [quant\_text\_analysis.io.writers](#quant_text_analysis.io.writers)
+  * [save\_vocab](#quant_text_analysis.io.writers.save_vocab)
+  * [save\_cluster\_terms](#quant_text_analysis.io.writers.save_cluster_terms)
+  * [save\_labels](#quant_text_analysis.io.writers.save_labels)
+  * [save\_metrics](#quant_text_analysis.io.writers.save_metrics)
+  * [save\_cluster\_ratio](#quant_text_analysis.io.writers.save_cluster_ratio)
+* [quant\_text\_analysis.preprocess.nlp\_backend](#quant_text_analysis.preprocess.nlp_backend)
+  * [\_SpacyTokenAdapter](#quant_text_analysis.preprocess.nlp_backend._SpacyTokenAdapter)
+    * [\_\_init\_\_](#quant_text_analysis.preprocess.nlp_backend._SpacyTokenAdapter.__init__)
+  * [\_SpacyDocAdapter](#quant_text_analysis.preprocess.nlp_backend._SpacyDocAdapter)
+    * [\_\_init\_\_](#quant_text_analysis.preprocess.nlp_backend._SpacyDocAdapter.__init__)
+    * [\_\_iter\_\_](#quant_text_analysis.preprocess.nlp_backend._SpacyDocAdapter.__iter__)
+  * [SpacyBackend](#quant_text_analysis.preprocess.nlp_backend.SpacyBackend)
+    * [\_\_init\_\_](#quant_text_analysis.preprocess.nlp_backend.SpacyBackend.__init__)
+    * [pipe](#quant_text_analysis.preprocess.nlp_backend.SpacyBackend.pipe)
+* [quant\_text\_analysis.preprocess.normalize](#quant_text_analysis.preprocess.normalize)
+  * [build\_normalizer](#quant_text_analysis.preprocess.normalize.build_normalizer)
+* [quant\_text\_analysis.preprocess.perdoc](#quant_text_analysis.preprocess.perdoc)
+  * [analyze\_docs](#quant_text_analysis.preprocess.perdoc.analyze_docs)
+  * [compute\_term\_frequencies](#quant_text_analysis.preprocess.perdoc.compute_term_frequencies)
+  * [analyze\_docs\_with\_cache](#quant_text_analysis.preprocess.perdoc.analyze_docs_with_cache)
+* [quant\_text\_analysis.settings](#quant_text_analysis.settings)
+  * [Settings](#quant_text_analysis.settings.Settings)
+    * [columns](#quant_text_analysis.settings.Settings.columns)
+    * [token\_policy](#quant_text_analysis.settings.Settings.token_policy)
+    * [ensure\_out\_dir](#quant_text_analysis.settings.Settings.ensure_out_dir)
+* [quant\_text\_analysis.\_\_main\_\_](#quant_text_analysis.__main__)
+  * [main](#quant_text_analysis.__main__.main)
 
 <a id="quant_text_analysis.cluster.algorithms"></a>
 
@@ -286,8 +286,8 @@ I/O:
 - CSV: Settings.csv_path
 書き込み:
 - outputs/top_words_overall.csv
-- outputs/top_words_period_{グループ名}.csv
-- outputs/top_words_method_{グループ名}.csv
+- outputs/top_words_periods.csv
+- outputs/top_words_methods.csv
 
 グルーピング:
 - 年代: "2014–2021" / "2022–2023" / "2024–2025"
@@ -531,6 +531,7 @@ class TokenPolicy()
 - `alpha_regex` _str_ - アルファベット判定に用いる正規表現。
 - `forced_phrases` _tuple[tuple[str, ...], ...]_ - 強制的に多語表現とみなす語列。
 - `forced_joiner` _str_ - 強制多語表現を結合する際の連結文字。
+- `forced_aliases` _tuple[tuple[tuple[str, ...], str], ...]_ - 多語表現ごとの出力別名。
 
 <a id="quant_text_analysis.data_types.RankingParams"></a>
 
@@ -1075,10 +1076,10 @@ Per-document token analysis with caching support.
 ```python
 def analyze_docs(backend: NLPBackend, normalizer: Normalizer,
                  texts: Sequence[str],
-                 policy: TokenPolicy) -> List[PerDocFreq]
+                 policy: TokenPolicy) -> List[PerDocTokens]
 ```
 
-文書群を解析し文書内相対頻度を求める。
+文書群を解析し正規化トークン列を求める。
 
 **Arguments**:
 
@@ -1090,35 +1091,60 @@ def analyze_docs(backend: NLPBackend, normalizer: Normalizer,
 
 **Returns**:
 
-  list[dict[str, float]]: 文書ごとの語の相対頻度分布。
+- `list[list[str]]` - 文書ごとの正規化済みトークン列。
 
-<a id="quant_text_analysis.preprocess.perdoc.get_or_analyze_docs"></a>
+<a id="quant_text_analysis.preprocess.perdoc.compute_term_frequencies"></a>
 
-#### get\_or\_analyze\_docs
+#### compute\_term\_frequencies
 
 ```python
-def get_or_analyze_docs(backend: NLPBackend,
-                        normalizer: Normalizer,
-                        texts: List[str],
-                        policy: TokenPolicy,
-                        *,
-                        cache_dir: Optional[str] = None) -> List[PerDocFreq]
+def compute_term_frequencies(
+        per_doc_tokens: Sequence[Sequence[str]]) -> List[PerDocFreq]
 ```
 
-文書解析結果をキャッシュから取得または新規生成する。
+文書ごとの正規化トークン列から相対頻度を算出する。
 
 **Arguments**:
 
-- `backend` _NLPBackend_ - 解析に用いる NLP バックエンド。
-- `normalizer` _Normalizer_ - トークン正規化関数。
-- `texts` _list[str]_ - 解析対象文書。
-- `policy` _TokenPolicy_ - 正規化ポリシー。
-- `cache_dir` _str | None_ - キャッシュ保存先。None の場合はキャッシュ未使用。
+- `per_doc_tokens` _Sequence[Sequence[str]]_ - 文書単位の正規化トークン列。
   
 
 **Returns**:
 
-  list[dict[str, float]]: 文書ごとの語の相対頻度分布。
+- `List[PerDocFreq]` - 文書内相対頻度の辞書リスト。
+
+<a id="quant_text_analysis.preprocess.perdoc.analyze_docs_with_cache"></a>
+
+#### analyze\_docs\_with\_cache
+
+```python
+def analyze_docs_with_cache(
+        backend: NLPBackend,
+        normalizer: Normalizer,
+        texts: List[str],
+        policy: TokenPolicy,
+        *,
+        cache_dir: Optional[str] = None) -> List[PerDocTokens]
+```
+
+文書解析結果（正規化トークン列）をキャッシュから取得または新規生成する。
+
+**Arguments**:
+
+- `backend` _NLPBackend_ - トークン化・解析を行うバックエンド。
+- `normalizer` _Normalizer_ - トークン正規化に使用する関数。
+- `texts` _list[str]_ - 解析対象の本文。
+- `policy` _TokenPolicy_ - 強制抽出や除外条件を含むポリシー。
+  
+
+**Arguments**:
+
+- `cache_dir` _str | None_ - トークン列を保存するキャッシュディレクトリ。
+  
+
+**Returns**:
+
+- `List[PerDocTokens]` - 文書ごとの正規化済みトークン列。
 
 <a id="quant_text_analysis.settings"></a>
 

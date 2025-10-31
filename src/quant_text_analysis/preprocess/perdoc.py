@@ -14,6 +14,7 @@ from breame.spelling import get_american_spelling
 from ..data_types import NLPBackend, Normalizer, TokenPolicy, TokenLike
 
 PerDocFreq = Dict[str, float]
+PerDocTokens = List[str]
 
 # 強制抽出の際に「語間で無視する記号」：ハイフン類・細かい句読点のみ
 _SKIP_PUNCTS = {"-", "‐", "‒", "–", "—", "―", "·", "•", "/", "\\"}
@@ -63,8 +64,8 @@ def analyze_docs(
     normalizer: Normalizer,
     texts: Sequence[str],
     policy: TokenPolicy,
-) -> List[PerDocFreq]:
-    """文書群を解析し文書内相対頻度を求める。
+) -> List[PerDocTokens]:
+    """文書群を解析し正規化トークン列を求める。
 
     Args:
         backend (NLPBackend): トークン化・解析を行う NLP バックエンド。
@@ -73,14 +74,14 @@ def analyze_docs(
         policy (TokenPolicy): 強制抽出やフィルタ条件を定義するポリシー。
 
     Returns:
-        list[dict[str, float]]: 文書ごとの語の相対頻度分布。
+        list[list[str]]: 文書ごとの正規化済みトークン列。
     """
     forced_index = _build_forced_index(policy)
     keys_by_len: List[Tuple[Tuple[str, ...], str]] = sorted(
         forced_index.items(), key=lambda kv: len(kv[0]), reverse=True
     )
 
-    per_doc_freqs: List[PerDocFreq] = []
+    tokenized_docs: List[PerDocTokens] = []
 
     for doc in backend.pipe(texts):
         raw: List[TokenLike] = [tok for tok in doc]
@@ -95,7 +96,7 @@ def analyze_docs(
             lem = get_american_spelling(lem)
             lemma_lower.append(lem)
 
-        toks: List[str] = []
+        doc_tokens: List[str] = []
         i = 0
         n = len(raw)
 
@@ -126,7 +127,7 @@ def analyze_docs(
                         else:
                             break
                     if k == len(key):
-                        toks.append(joined)  # 強制結合はフィルタをバイパス
+                        doc_tokens.append(joined)  # 強制結合はフィルタをバイパス
                         i = j
                         matched = True
                         break
@@ -137,17 +138,35 @@ def analyze_docs(
             # (C) 強制一致しなかった位置は通常正規化（POS/NER/alpha_regex など）
             norm = normalizer(raw[i])
             if norm is not None:
-                toks.append(norm)
+                doc_tokens.append(norm)
             i += 1
 
-        total = len(toks)
-        if total == 0:
+        tokenized_docs.append(doc_tokens)
+
+    return tokenized_docs
+
+
+def compute_term_frequencies(per_doc_tokens: Sequence[Sequence[str]]) -> List[PerDocFreq]:
+    """文書ごとの正規化トークン列から相対頻度を算出する。
+
+    Args:
+        per_doc_tokens (Sequence[Sequence[str]]): 文書単位の正規化トークン列。
+
+    Returns:
+        List[PerDocFreq]: 文書内相対頻度の辞書リスト。
+    """
+
+    per_doc_freqs: List[PerDocFreq] = []
+    for tokens in per_doc_tokens:
+        if not tokens:
             per_doc_freqs.append({})
-        else:
-            cnt: Dict[str, int] = Counter(toks)
-            per_doc_freqs.append({w: c / float(total) for w, c in cnt.items()})
+            continue
+        counts = Counter(tokens)
+        total = float(sum(counts.values()))
+        per_doc_freqs.append({term: count / total for term, count in counts.items()})
 
     return per_doc_freqs
+
 
 # ----------------------------
 # キャッシュ付きラッパ
@@ -181,25 +200,27 @@ def _make_key(texts: Iterable[str], policy: TokenPolicy, backend_id: str) -> str
     return h.hexdigest()
 
 
-def get_or_analyze_docs(
+def analyze_docs_with_cache(
     backend: NLPBackend,
     normalizer: Normalizer,
     texts: List[str],
     policy: TokenPolicy,
     *,
     cache_dir: Optional[str] = None,
-) -> List[PerDocFreq]:
-    """文書解析結果をキャッシュから取得または新規生成する。
+) -> List[PerDocTokens]:
+    """文書解析結果（正規化トークン列）をキャッシュから取得または新規生成する。
 
     Args:
-        backend (NLPBackend): 解析に用いる NLP バックエンド。
-        normalizer (Normalizer): トークン正規化関数。
-        texts (list[str]): 解析対象文書。
-        policy (TokenPolicy): 正規化ポリシー。
-        cache_dir (str | None): キャッシュ保存先。None の場合はキャッシュ未使用。
+        backend (NLPBackend): トークン化・解析を行うバックエンド。
+        normalizer (Normalizer): トークン正規化に使用する関数。
+        texts (list[str]): 解析対象の本文。
+        policy (TokenPolicy): 強制抽出や除外条件を含むポリシー。
+
+    Keyword Args:
+        cache_dir (str | None): トークン列を保存するキャッシュディレクトリ。
 
     Returns:
-        list[dict[str, float]]: 文書ごとの語の相対頻度分布。
+        List[PerDocTokens]: 文書ごとの正規化済みトークン列。
     """
     if cache_dir is None:
         return analyze_docs(backend, normalizer, texts, policy)
@@ -207,13 +228,14 @@ def get_or_analyze_docs(
     os.makedirs(cache_dir, exist_ok=True)
     backend_id = getattr(backend, "model_name", backend.__class__.__name__)
     key = _make_key(texts, policy, str(backend_id))
-    path = os.path.join(cache_dir, f"per_doc_freqs_{key}.pkl")
+    path = os.path.join(cache_dir, f"per_doc_tokens_{key}.pkl")
 
     if os.path.exists(path):
         with open(path, "rb") as f:
             return pickle.load(f)
 
-    per_doc_freqs = analyze_docs(backend, normalizer, texts, policy)
+    tokenized_docs = analyze_docs(backend, normalizer, texts, policy)
     with open(path, "wb") as f:
-        pickle.dump(per_doc_freqs, f)
-    return per_doc_freqs
+        pickle.dump(tokenized_docs, f)
+    return tokenized_docs
+
