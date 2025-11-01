@@ -4,11 +4,13 @@
 
 ## 概要
 
-本プロジェクトは、以下の3つの主要な分析機能を提供します：
+本プロジェクトは、以下の主要な分析機能を提供します：
 
 1. **頻出語分析** (`freq`) - 文書内相対頻度に基づく頻出語のランキング
 2. **フレーズ抽出** (`phrases`) - Gensim Phrasesを用いたbigram/trigramの候補抽出
 3. **単語クラスタリング** (`cluster`) - 文書×語頻度を SVD で次元削減し、球面 k-means で単語をクラスタリング
+4. **コード×手法クロス集計** (`cross_table`) - 文書単位でコード出現有無を集計し、研究手法カテゴリと対比
+5. **多項ロジット推定と可視化** (`mnlr`) - コード出現データを多項ロジスティック回帰で推定し、年×手法ごとの予測確率を可視化
 
 ## 必要な環境
 
@@ -19,6 +21,8 @@
   - gensim ~=4.3
   - scikit-learn ~=1.5
   - breame ~=0.1.2
+  - statsmodels ~=0.14
+  - matplotlib ~=3.10
 
 ## インストール
 
@@ -113,6 +117,41 @@ python -m quant_text_analysis cluster
 - k-meansの初期化回数: 20
 - 最大反復回数: 300
 
+### 4. コード×手法クロス集計 (cross_table)
+
+文書内にコードが一度でも出現したかを基準に、コードと研究手法のクロス集計を生成します。
+
+```bash
+python -m quant_text_analysis cross_table
+```
+
+**出力ファイル:**
+- `outputs/{タイムスタンプ}/code_method_crosstab_docs.csv` - コード×研究手法（文書数）のクロス表
+
+**特徴:**
+- `config.CODE_MAP` に定義したコード集合を利用
+- トークン化は既存のキャッシュを再利用しつつ再計算
+- 手法ラベルは `grouping.method_group` の分類を適用
+
+### 5. 多項ロジット推定と可視化 (mnlr)
+
+文書トークンをコードに展開し、多項ロジット（MNLogit）で年・研究手法の効果を推定します。
+
+```bash
+python -m quant_text_analysis mnlr
+```
+
+**出力ファイル:**
+- `outputs/{タイムスタンプ}/mlra_params.csv` - 推定係数（カテゴリ別）
+- `outputs/{タイムスタンプ}/mlra_bse_cluster.csv` - 文書クラスタロバスト標準誤差
+- `outputs/{タイムスタンプ}/mlra_summary.txt` - 推定結果サマリ（statsmodels出力）
+- `outputs/{タイムスタンプ}/prob_by_year_{code}.png` - 年×研究手法ごとの予測確率を二次近似した可視化
+
+**特徴:**
+- 文書 ID をクラスタとするロバスト共分散推定を実施
+- 観測ごとの予測確率を算出し、Stata の `qfitci` 相当の信頼区間付きプロットを生成
+- コード定義は `config.CODE_MAP` を参照
+
 ## 設定のカスタマイズ
 
 設定は `src/quant_text_analysis/settings.py` の `Settings` クラスで管理されています。
@@ -151,7 +190,9 @@ Quantitative-Text-Analysis/
 │       ├── commands/                # 各コマンドの実装
 │       │   ├── freq_cli.py         # 頻出語分析
 │       │   ├── phrases_cli.py      # フレーズ抽出
-│       │   └── cluster_cli.py      # クラスタリング
+│       │   ├── cluster_cli.py      # クラスタリング
+│       │   ├── cross_table.py      # コード×手法クロス集計
+│       │   └── mnlr_cli.py         # 多項ロジット推定
 │       ├── preprocess/              # 前処理モジュール
 │       │   ├── nlp_backend.py      # spaCy処理
 │       │   ├── normalize.py        # トークン正規化
@@ -166,7 +207,12 @@ Quantitative-Text-Analysis/
 │       ├── io/                      # 入出力処理
 │       │   ├── loader.py           # データ読み込み
 │       │   └── writers.py          # 結果書き出し
-│       └── grouping.py              # グルーピング処理
+│       ├── grouping.py              # グルーピング処理
+│       └── mnlr/                    # 多項ロジット関連ユーティリティ
+│           ├── coding.py           # コード展開ロジック
+│           ├── model.py            # 設計・推定補助
+│           ├── plotting.py         # 予測確率の可視化
+│           └── tables.py           # コード×手法クロス表作成
 ├── data/
 │   ├── raw/                         # 入力データ
 │   └── cache/                       # キャッシュファイル
