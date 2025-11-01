@@ -11,7 +11,6 @@ def build_code_method_crosstab(
     per_doc_codes: Sequence[Sequence[str]],
     method: pd.Series,
     code_order: Sequence[str],
-    include_methods: Iterable[str] | None = None,
 ) -> pd.DataFrame:
     """文書単位で、コードの出現有無（1/0）を研究手法ごとに集計したクロス集計表を返す。
 
@@ -19,7 +18,6 @@ def build_code_method_crosstab(
         per_doc_codes (Sequence[Sequence[str]]): 文書ごとのコード列。
         method (pandas.Series): 文書ごとの研究手法ラベル。
         code_order (Sequence[str]): 行の表示順に用いるコード名の並び。
-        include_methods (Iterable[str] | None): 列に必ず含めたい手法名。観測に現れない場合でも 0 で列を作成する。
 
     Returns:
         pandas.DataFrame: 行がコード、列が手法の 0/1 クロス集計。行名は `code`、列名は `method`。
@@ -31,9 +29,8 @@ def build_code_method_crosstab(
         for code in codes:
             rows.append((doc_id, code, method_series.iloc[doc_id]))
 
-    extra_methods = {str(m) for m in include_methods or ()}
     observed_methods = set(method_series.astype(str).tolist())
-    column_labels = sorted(observed_methods | extra_methods)
+    column_labels = sorted(observed_methods)
     code_labels = list(code_order)
 
     if rows:

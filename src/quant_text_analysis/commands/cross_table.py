@@ -64,7 +64,6 @@ def main() -> None:
         per_doc_codes,
         method,
         code_order=sorted(CODE_MAP.keys()),
-        include_methods=["other"],
     )
 
     # (4) 出力
