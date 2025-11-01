@@ -109,11 +109,7 @@ def predict_probabilities(
     Returns:
         pandas.DataFrame: 行が観測、列がカテゴリの確率表。
     """
-    probs = res.predict(X)
+    probs = res.model.predict(res.params, exog=X.to_numpy())
     n_class = probs.shape[1] if probs.ndim == 2 else 1
-    cols = (
-        list(categories)[:n_class]
-        if n_class == len(categories)
-        else [f"class_{j}" for j in range(n_class)]
-    )
+    cols = list(categories)[:n_class] if n_class == len(categories) else [f"class_{j}" for j in range(n_class)]
     return pd.DataFrame(probs, columns=cols, index=X.index)
