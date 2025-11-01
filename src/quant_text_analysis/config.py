@@ -49,6 +49,9 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
 }
 
 
+MNLR_EXCLUDE_METHODS: tuple[str, ...] = ("other",)
+
+
 def default_columns() -> Columns:
     """既定の列名設定を返す。
 

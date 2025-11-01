@@ -30,7 +30,7 @@ from quant_text_analysis.mnlr import (
     predict_probabilities,
     rows_from_tokens,
 )
-from ..config import CODE_MAP
+from ..config import CODE_MAP, MNLR_EXCLUDE_METHODS
 
 
 def main() -> None:
@@ -57,6 +57,19 @@ def main() -> None:
     # 2) コーディング→観測展開
     methods = df["manual_tags"].apply(method_group)
     years = df["year"]
+
+    exclude_methods = set(MNLR_EXCLUDE_METHODS)
+    keep_mask = ~methods.isin(exclude_methods)
+    if not keep_mask.any():
+        raise RuntimeError(
+            "除外設定後にMNLogitへ投入できる文書がありません。config.MNLR_EXCLUDE_METHODS を見直してください。"
+        )
+
+    keep_flags = keep_mask.to_list()
+    per_doc_tokens = [tokens for tokens, keep in zip(per_doc_tokens, keep_flags) if keep]
+    methods = methods[keep_mask].reset_index(drop=True)
+    years = years[keep_mask].reset_index(drop=True)
+
     code_index = invert_code_map(CODE_MAP)
     df_obs = rows_from_tokens(per_doc_tokens, years, methods, code_index)
     if df_obs.empty:
@@ -74,6 +87,7 @@ def main() -> None:
     bse.to_csv(out_dir / "mlra_bse_cluster.csv", encoding="utf-8", index=True)
     with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
         f.write(str(robust.summary()))
+    print("category map:", res.model._ynames_map)
     print(robust.summary())
 
     # 5) 観測ごとの予測選択確率（モデルに基づく）
