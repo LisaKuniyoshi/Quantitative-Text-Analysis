@@ -7,16 +7,37 @@ from typing import Tuple
 from .data_types import Columns, TokenPolicy
 
 CODE_MAP: dict[str, tuple[str, ...]] = {
+    # クラスタ1
     "suppress": (
         "avoid",
         "suppression",
         "suppress",
         "conscious",
+        "mask",
         "conceal",
+        "identity",
         "discrimination",
+        "priviledge",
+        "majority",
     ),
-    "survive": ("stigma", "navigate", "complexity", "strategy"),
-    "achieve": ("manage", "maintain", "social_relationship", "achieve"),
+    # クラスタ2
+    "survive": (
+        "stigma",
+        "navigate",
+        "complexity",
+        "autistic_identity",
+        "strategy",
+        "coping_strategy",
+    ),
+    # クラスタ4
+    "achieve": (
+        "manage",
+        "maintain",
+        "social_relationship",
+        "achieve",
+        "opportunity",
+    ),
+    # クラスタ11
     "engagement": (
         "desire",
         "day_to_day",
@@ -25,6 +46,7 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "everyday",
         "connection",
     ),
+    # クラスタ18
     "gap": (
         "compensatory",
         "cognitive",
@@ -32,10 +54,18 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "underlie",
         "behavioral",
         "compensation",
-        "phenotyle",
+        "phenotype",
     ),
-    "child": ("boy", "girl", "bias", "child", "detect"),
+    # クラスタ19
+    "child": (
+        "boy",
+        "girl",
+        "bias",
+        "child",
+        "detect"
+    ),
     "gender": ("female", "male", "gender", "boy", "girl", "woman", "man"),
+    # クラスタ8, 10
     "mental health": (
         "mental_health",
         "depression",
@@ -44,8 +74,18 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "burnout",
         "exhaustion",
         "risk_factor",
+        "anxiety",
+        "stress",
     ),
-    "diagnosis": ("delay", "late", "age", "diagnosis"),
+    # クラスタ5
+    "diagnosis": (
+        "delay",
+        "late",
+        "later",
+        "age",
+        "diagnosis",
+        "diagnostic",
+    ),
 }
 
 
