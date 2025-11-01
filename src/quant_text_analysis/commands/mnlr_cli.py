@@ -87,7 +87,7 @@ def main() -> None:
     bse.to_csv(out_dir / "mlra_bse_cluster.csv", encoding="utf-8", index=True)
     with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
         f.write(str(robust.summary()))
-    print("category map:", res.model._ynames_map)
+    print("category map:", {f"y={j}": cat for j, cat in enumerate(design.categories)})
     print(robust.summary())
 
     # 5) 観測ごとの予測選択確率（モデルに基づく）
