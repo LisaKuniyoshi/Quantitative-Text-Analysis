@@ -54,6 +54,9 @@ def main(argv: List[str] | None = None) -> int:
     sp_clu = subparsers.add_parser("cluster", help="PPMI→SVD→球面k-means の一括実行")
     sp_clu.set_defaults(_module="quant_text_analysis.commands.cluster_cli")
 
+    sp_mnlr = subparsers.add_parser("mnlr", help="文書クラスタに対する多項ロジット推定と可視化",)
+    sp_mnlr.set_defaults(_module="quant_text_analysis.commands.mnlr_cli")
+
     ns = parser.parse_args(argv)
     return _dispatch(getattr(ns, "_module"))
 

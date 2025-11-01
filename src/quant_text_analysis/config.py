@@ -6,6 +6,49 @@ from typing import Tuple
 
 from .data_types import Columns, TokenPolicy
 
+CODE_MAP: dict[str, tuple[str, ...]] = {
+    "suppress": (
+        "avoid",
+        "suppression",
+        "suppress",
+        "conscious",
+        "conceal",
+        "discrimination",
+    ),
+    "survive": ("stigma", "navigate", "complexity", "strategy"),
+    "achieve": ("manage", "maintain", "social_relationship", "achieve"),
+    "engagement": (
+        "desire",
+        "day_to_day",
+        "engagement",
+        "interpersonal",
+        "everyday",
+        "connection",
+    ),
+    "gap": (
+        "compensatory",
+        "cognitive",
+        "deficit",
+        "underlie",
+        "behavioral",
+        "compensation",
+        "phenotyle",
+    ),
+    "child": ("boy", "girl", "bias", "child", "detect"),
+    "gender": ("female", "male", "gender", "boy", "girl", "woman", "man"),
+    "mental health": (
+        "mental_health",
+        "depression",
+        "suicidality",
+        "risk",
+        "burnout",
+        "exhaustion",
+        "risk_factor",
+    ),
+    "diagnosis": ("delay", "late", "age", "diagnosis"),
+}
+
+
 def default_columns() -> Columns:
     """既定の列名設定を返す。
 
@@ -13,6 +56,8 @@ def default_columns() -> Columns:
         Columns: 既定の列名設定を表す `Columns` インスタンス。
     """
     return Columns()
+
+
 
 def default_token_policy() -> TokenPolicy:
     """既定のトークン正規化ポリシーを返す。
@@ -90,8 +135,8 @@ def default_token_policy() -> TokenPolicy:
         ("social", "camouflage"),
         ("social", "camouflaging"),
         ("ASD",),
-        ("retest", ),
-        ("sc", ),
+        ("retest",),
+        ("sc",),
         ("ADHD",),
         ("daily", "life"),
         ("sensory", "sensitivity"),
@@ -109,7 +154,7 @@ def default_token_policy() -> TokenPolicy:
         ("co", "produce"),
         ("co", "production"),
         ("co", "twin"),
-        ("self", "esteem")
+        ("self", "esteem"),
     )
 
     forced_aliases: Tuple[Tuple[Tuple[str, ...], str], ...] = (
@@ -126,7 +171,7 @@ def default_token_policy() -> TokenPolicy:
         (("generalize", "anxiety", "disorder"), "generalized_anxiety_disorder"),
         (("eat", "disorder"), "eating_disorder"),
         (("sex", "assign", "at", "birth"), "sex_assigned_at_birth"),
-        (("sex", "design", "at", "birth"),"sex_designated_at_birth"),
+        (("sex", "design", "at", "birth"), "sex_designated_at_birth"),
         (("semi", "structure"), "semi_structured"),
     )
 
