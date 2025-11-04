@@ -81,14 +81,15 @@ def main() -> None:
 
     # 4) 出力（推定結果）
     out_dir = cfg.ensure_out_dir()
-    params = pd.DataFrame(robust.params, index=design.X.columns)
-    bse = pd.DataFrame(robust.bse, index=design.X.columns)
-    params.to_csv(out_dir / "mlra_params.csv", encoding="utf-8", index=True)
-    bse.to_csv(out_dir / "mlra_bse_cluster.csv", encoding="utf-8", index=True)
-    with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
-        f.write(str(robust.summary()))
+    # params = pd.DataFrame(robust.params, index=design.X.columns)
+    # bse = pd.DataFrame(robust.bse, index=design.X.columns)
+    # params.to_csv(out_dir / "mlra_params.csv", encoding="utf-8", index=True)
+    # bse.to_csv(out_dir / "mlra_bse_cluster.csv", encoding="utf-8", index=True)
+    # with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
+    #     f.write(str(robust.summary()))
     print("category map:", {f"y={j}": cat for j, cat in enumerate(design.categories)})
     print(robust.summary())
+    print(robust.get_margeff().summary())
 
     # 5) 観測ごとの予測選択確率（モデルに基づく）
     prob_df = predict_probabilities(res, design.X, design.categories)
