@@ -43,30 +43,25 @@ def build_design(df_obs: pd.DataFrame) -> Design:
         Design: 推定に必要な y, X, clusters, year, method, categories を格納したオブジェクト。
     """
     y_cat = pd.Categorical(df_obs["code"])
-    y = pd.Series(y_cat.codes, index=df_obs.index, dtype=int)
+    y = pd.Series(y_cat.codes, index=df_obs.index, dtype=int, name="code")
 
     method = df_obs["method"].fillna("other").astype("category")
-    year_num = pd.to_numeric(df_obs["year"], errors="coerce")
-    if year_num.isna().any():
-        year_num = year_num.fillna(year_num.median())
-    year_centered = (year_num - year_num.mean()).astype(float)
+    year = pd.to_numeric(df_obs["year"], errors="coerce")
+    year_centered = year - year.mean()
 
     d_method = pd.get_dummies(method, prefix="method", drop_first=True)
-    X = pd.concat(
-        [
-            pd.Series(1.0, index=df_obs.index, name="const"),
-            year_centered.rename("year_centered"),
-        ] + ([d_method] if not d_method.empty else []),
-        axis=1,
-    ).astype(float)
+
+    const = pd.Series(1.0, index=df_obs.index, name="const")
+    X = pd.concat([const, year_centered, d_method.astype(float)], axis=1)
 
     clusters = df_obs["doc_id"].astype(int)
     categories = tuple(y_cat.categories.astype(str).tolist())
+
     return Design(
         y=y,
         X=X,
         clusters=clusters,
-        year=year_num,
+        year=year,
         method=method,
         categories=categories,
     )
@@ -110,6 +105,5 @@ def predict_probabilities(
         pandas.DataFrame: 行が観測、列がカテゴリの確率表。
     """
     probs = res.model.predict(res.params, exog=X.to_numpy())
-    n_class = probs.shape[1] if probs.ndim == 2 else 1
-    cols = list(categories)[:n_class] if n_class == len(categories) else [f"class_{j}" for j in range(n_class)]
+    cols = list(categories)
     return pd.DataFrame(probs, columns=cols, index=X.index)
