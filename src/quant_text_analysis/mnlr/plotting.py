@@ -58,17 +58,27 @@ def plot_prob_by_year_with_method(
     Notes:
         観測数が 3 未満の手法カテゴリはスキップする。ファイル名は `prob_by_year_{code}.png`。
     """
-    methods = sorted(method.astype(str).unique())
+    year = pd.Series(year).reset_index(drop=True)
+    method = pd.Series(method).astype(str).reset_index(drop=True)
+    prob_df = prob_df.reset_index(drop=True)
 
     for code in prob_df.columns:
         fig, ax = plt.subplots(figsize=(6, 4), dpi=120)
 
-        for m in methods:
-            mask = method.astype(str) == m
+        for m in method:
+            mask = (method == m)
+
             if mask.sum() < 3:
                 continue
-            prob_series = pd.Series(prob_df.loc[mask, code])
-            qfitci_like(ax, year[mask], prob_series, label=m)
+
+            y = prob_df[code].loc[mask].astype(float)
+            x = year.loc[mask].astype(float)
+
+            x = x.reset_index(drop=True)
+            y = y.reset_index(drop=True)
+
+
+            qfitci_like(ax, x, y, label=m)
 
         ax.set_xlabel("Year")
         ax.set_ylabel(f"P(Code={code})")

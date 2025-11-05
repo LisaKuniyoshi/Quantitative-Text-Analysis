@@ -1,109 +1,57 @@
 """MNLR（多項ロジスティック回帰）モデルの設計・推定・予測を行う補助関数群。"""
 
 from __future__ import annotations
+from typing import List
 
-from dataclasses import dataclass
-from typing import Tuple
-
+import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
 
 
-@dataclass(frozen=True)
-class Design:
-    """MNLogit 推定に必要な設計情報を保持するコンテナ。
-
-    Attributes:
-        y (pandas.Series): 目的変数。カテゴリを整数に符号化した系列。
-        X (pandas.DataFrame): 説明変数のデザイン行列（定数項、中心化年、手法ダミー等）。
-        clusters (pandas.Series): クラスタ変数（例: 文書 ID）。クラスタ・ロバスト分散の群指定に使用。
-        year (pandas.Series): 年（数値化・欠損補完後）。
-        method (pandas.Series): 研究手法カテゴリ（categorical）。
-        categories (tuple[str, ...]): 目的変数の元ラベルの並び。
-    """
-
-    y: pd.Series
-    X: pd.DataFrame
-    clusters: pd.Series
-    year: pd.Series
-    method: pd.Series
-    categories: Tuple[str, ...]
-
-
-def build_design(df_obs: pd.DataFrame) -> Design:
-    """観測単位の長形式 DataFrame から、MNLogit 用の `Design` を構築する。
-
-    前処理として、`year` は数値化し欠損を中央値で補完、平均中心化を行う。`method` は
-    第1カテゴリを基準にダミー化する。`y` は `code` のカテゴリを整数化したもの。
+def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual"):
+    """式インターフェースでMNLogitを推定し、ロバストSEを付ける。
 
     Args:
-        df_obs (pandas.DataFrame): 列 `doc_id`, `code`, `year`, `method` を含む長形式データ。
+        df_obs: 列 doc_id, code, year, method を持つ長形式データ。
+        base_method: 手法の基準水準。
 
     Returns:
-        Design: 推定に必要な y, X, clusters, year, method, categories を格納したオブジェクト。
+        tuple: (robust_results, vanilla_results, categories)
     """
-    y_cat = pd.Categorical(df_obs["code"])
-    y = pd.Series(y_cat.codes, index=df_obs.index, dtype=int, name="code")
+    df = df_obs.copy()
+    df["code"] = df["code"].astype("category")
+    df["method"] = df["method"].astype("category")
+    df["year"] = pd.to_numeric(df["year"], errors="coerce")
+    df["year_centered"] = df["year"] - df["year"].mean()
 
-    method = df_obs["method"].fillna("other").astype("category")
-    year = pd.to_numeric(df_obs["year"], errors="coerce")
-    year_centered = year - year.mean()
+    df["code_num"] = df["code"].cat.codes
 
-    d_method = pd.get_dummies(method, prefix="method", drop_first=True)
-
-    const = pd.Series(1.0, index=df_obs.index, name="const")
-    X = pd.concat([const, year_centered, d_method.astype(float)], axis=1)
-
-    clusters = df_obs["doc_id"].astype(int)
-    categories = tuple(y_cat.categories.astype(str).tolist())
-
-    return Design(
-        y=y,
-        X=X,
-        clusters=clusters,
-        year=year,
-        method=method,
-        categories=categories,
+    mod = smf.mnlogit(
+        f"code_num ~ year_centered + C(method, Treatment('{base_method}'))", data=df
     )
-
-
-def fit_multinomial_cluster_robust(design: Design):
-    """文書クラスタに対してロバストな共分散推定を伴う MNLogit を推定する。
-
-    Args:
-        design (Design): 設計オブジェクト。
-
-    Returns:
-        tuple[statsmodels.discrete.discrete_model.MNLogitResults,
-              statsmodels.discrete.discrete_model.MNLogitResults]:
-            0番目にクラスタ・ロバスト推定の結果、1番目に通常推定の結果。
-    """
-    model = sm.MNLogit(endog=design.y, exog=design.X)
-    standard = model.fit(method="newton", disp=False)
-    robust = model.fit(
+    res = mod.fit(method="newton", maxiter=200, disp=False)
+    robust = mod.fit(
         method="newton",
         disp=False,
         cov_type="cluster",
-        cov_kwds={"groups": design.clusters},
+        cov_kwds={"groups": df["doc_id"]},
     )
-    return robust, standard
+    cats = df["code"].cat.categories.tolist()
+    return robust, res, cats, df  # 予測では res を使う
 
 
-def predict_probabilities(
-    res,
-    X: pd.DataFrame,
-    categories: Tuple[str, ...],
-) -> pd.DataFrame:
-    """各観測のカテゴリ別選択確率を推定し DataFrame で返す。
+def predict_probabilities(res, df_pred: pd.DataFrame, cats: List[str]) -> pd.DataFrame:
+    """式モデルの予測確率を返す（行=観測、列=コード）。
 
     Args:
-        res: `statsmodels` の MNLogit 推定結果。
-        X (pandas.DataFrame): 予測に用いるデザイン行列。
-        categories (tuple[str, ...]): 列名に用いるカテゴリ名の並び。
+        res: MNLogitの通常結果。
+        df_pred: 列 year_centered, method（カテゴリ）等を含むデータ。
+        cats: コード名の順序。
 
     Returns:
-        pandas.DataFrame: 行が観測、列がカテゴリの確率表。
+        pd.DataFrame: 予測確率。
     """
-    probs = res.model.predict(res.params, exog=X.to_numpy())
-    cols = list(categories)
-    return pd.DataFrame(probs, columns=cols, index=X.index)
+    p = res.predict(df_pred)  # (n, K)
+    cols = list(cats)
+    return pd.DataFrame(np.asarray(p), columns=cols, index=df_pred.index)

@@ -23,8 +23,7 @@ from quant_text_analysis.preprocess.nlp_backend import SpacyBackend
 from quant_text_analysis.preprocess.normalize import build_normalizer
 from quant_text_analysis.preprocess.perdoc import analyze_docs_with_cache
 from quant_text_analysis.mnlr import (
-    build_design,
-    fit_multinomial_cluster_robust,
+    fit_mnlogit,
     invert_code_map,
     plot_prob_by_year_with_method,
     predict_probabilities,
@@ -44,6 +43,9 @@ def main() -> None:
     # 1) CSV読み込み + トークン化（キャッシュ利用）
     df = load_df(str(cfg.csv_path), cfg.columns)
     texts = df["abstract"].fillna("").astype(str).tolist()
+    years = pd.to_numeric(df["year"], errors="coerce")
+    methods = df["manual_tags"].apply(method_group)
+
     backend = SpacyBackend(cfg.spacy_model)
     normalizer = build_normalizer(cfg.token_policy)
     per_doc_tokens = analyze_docs_with_cache(
@@ -55,9 +57,6 @@ def main() -> None:
     )
 
     # 2) コーディング→観測展開
-    methods = df["manual_tags"].apply(method_group)
-    years = df["year"]
-
     exclude_methods = set(MNLR_EXCLUDE_METHODS)
     keep_mask = ~methods.isin(exclude_methods)
     if not keep_mask.any():
@@ -76,8 +75,7 @@ def main() -> None:
         raise RuntimeError("コーディング後の観測が0件です。mlra_config.CODE_MAP を確認してください。")
 
     # 3) 設計→適合（文書クラスタに対するロバストSE）
-    design = build_design(df_obs)
-    robust, res = fit_multinomial_cluster_robust(design)
+    rob, res, cats, df_for_pred = fit_mnlogit(df_obs, base_method="qual")
 
     # 4) 出力（推定結果）
     out_dir = cfg.ensure_out_dir()
@@ -86,17 +84,22 @@ def main() -> None:
     # params.to_csv(out_dir / "mlra_params.csv", encoding="utf-8", index=True)
     # bse.to_csv(out_dir / "mlra_bse_cluster.csv", encoding="utf-8", index=True)
     # with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
-    #     f.write(str(robust.summary()))
-    print("category map:", {f"y={j}": cat for j, cat in enumerate(design.categories)})
-    print(robust.summary())
-    print(robust.get_margeff().summary())
+    #     f.write(str(rob.summary()))
+    print(rob.summary())
+    print(rob.get_margeff().summary())
 
     # 5) 観測ごとの予測選択確率（モデルに基づく）
-    prob_df = predict_probabilities(res, design.X, design.categories)
+    prob_df = predict_probabilities(res, df_for_pred, cats)
 
     # 6) 年×手法の二次当てはめ＋95%CIを描画（qfitci相当）
-    plot_prob_by_year_with_method(prob_df, design.year, design.method, out_dir)
-
+    prob = predict_probabilities(res, df_for_pred, cats)
+    # 可視化メタ（年は素のyearを使用。methodは元カテゴリ）
+    plot_prob_by_year_with_method(
+        prob, 
+        df_for_pred["year"], 
+        df_for_pred["method"], 
+        out_dir
+    )
 
 if __name__ == "__main__":
     main()

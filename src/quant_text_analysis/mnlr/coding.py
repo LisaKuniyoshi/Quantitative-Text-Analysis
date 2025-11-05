@@ -54,8 +54,8 @@ def codes_per_doc(
 
 def rows_from_tokens(
     per_doc_tokens: Sequence[Sequence[str]],
-    years: Iterable | pd.Series,
-    methods: Iterable | pd.Series,
+    years: pd.Series,
+    methods: pd.Series,
     code_index: Dict[str, str],
 ) -> pd.DataFrame:
     """文書ごとのトークン列を観測単位の行に展開し、DataFrame を返す。
@@ -75,24 +75,12 @@ def rows_from_tokens(
     Raises:
         ValueError: `years` と `methods` の長さが文書数と一致しない場合。
     """
-    rows: List[RowType] = []
-    yrs = (
-        years
-        if isinstance(years, pd.Series)
-        else pd.Series(list(years))
-    )
-    mds = (
-        methods
-        if isinstance(methods, pd.Series)
-        else pd.Series(list(methods))
-    )
-
-    for doc_id, tokens in enumerate(per_doc_tokens):
-        yr = yrs.iloc[doc_id]
-        md = mds.iloc[doc_id]
-        for token in tokens:
-            code = code_index.get(token)
+    rows: List[Tuple[int, str, int | float, str]] = []
+    for doc_id, toks in enumerate(per_doc_tokens):
+        yr = years.iloc[doc_id]
+        md = methods.iloc[doc_id]
+        for tok in toks:
+            code = code_index.get(tok)
             if code is not None:
                 rows.append((doc_id, code, yr, md))
-
     return pd.DataFrame(rows, columns=["doc_id", "code", "year", "method"])

@@ -12,8 +12,12 @@
   * [abstract\_cluster\_ratio](#quant_text_analysis.cluster.metrics.abstract_cluster_ratio)
 * [quant\_text\_analysis.commands.cluster\_cli](#quant_text_analysis.commands.cluster_cli)
   * [main](#quant_text_analysis.commands.cluster_cli.main)
+* [quant\_text\_analysis.commands.cross\_table](#quant_text_analysis.commands.cross_table)
+  * [main](#quant_text_analysis.commands.cross_table.main)
 * [quant\_text\_analysis.commands.freq\_cli](#quant_text_analysis.commands.freq_cli)
   * [main](#quant_text_analysis.commands.freq_cli.main)
+* [quant\_text\_analysis.commands.mnlr\_cli](#quant_text_analysis.commands.mnlr_cli)
+  * [main](#quant_text_analysis.commands.mnlr_cli.main)
 * [quant\_text\_analysis.commands.phrases\_cli](#quant_text_analysis.commands.phrases_cli)
   * [simple\_tokenize](#quant_text_analysis.commands.phrases_cli.simple_tokenize)
   * [build\_corpus](#quant_text_analysis.commands.phrases_cli.build_corpus)
@@ -58,6 +62,18 @@
   * [save\_labels](#quant_text_analysis.io.writers.save_labels)
   * [save\_metrics](#quant_text_analysis.io.writers.save_metrics)
   * [save\_cluster\_ratio](#quant_text_analysis.io.writers.save_cluster_ratio)
+* [quant\_text\_analysis.mnlr.coding](#quant_text_analysis.mnlr.coding)
+  * [invert\_code\_map](#quant_text_analysis.mnlr.coding.invert_code_map)
+  * [codes\_per\_doc](#quant_text_analysis.mnlr.coding.codes_per_doc)
+  * [rows\_from\_tokens](#quant_text_analysis.mnlr.coding.rows_from_tokens)
+* [quant\_text\_analysis.mnlr.model](#quant_text_analysis.mnlr.model)
+  * [fit\_mnlogit](#quant_text_analysis.mnlr.model.fit_mnlogit)
+  * [predict\_probabilities](#quant_text_analysis.mnlr.model.predict_probabilities)
+* [quant\_text\_analysis.mnlr.plotting](#quant_text_analysis.mnlr.plotting)
+  * [qfitci\_like](#quant_text_analysis.mnlr.plotting.qfitci_like)
+  * [plot\_prob\_by\_year\_with\_method](#quant_text_analysis.mnlr.plotting.plot_prob_by_year_with_method)
+* [quant\_text\_analysis.mnlr.tables](#quant_text_analysis.mnlr.tables)
+  * [build\_code\_method\_crosstab](#quant_text_analysis.mnlr.tables.build_code_method_crosstab)
 * [quant\_text\_analysis.preprocess.nlp\_backend](#quant_text_analysis.preprocess.nlp_backend)
   * [\_SpacyTokenAdapter](#quant_text_analysis.preprocess.nlp_backend._SpacyTokenAdapter)
     * [\_\_init\_\_](#quant_text_analysis.preprocess.nlp_backend._SpacyTokenAdapter.__init__)
@@ -270,6 +286,35 @@ def main() -> None
 * キャッシュは文書頻度・PPMI・SVD の計算で利用されます。
 * 語彙やクラスタリング結果は標準出力とファイルに出力されます。
 
+<a id="quant_text_analysis.commands.cross_table"></a>
+
+# quant\_text\_analysis.commands.cross\_table
+
+code × method のクロス集計（文書単位の出現有無）。
+
+既存ロジックを再利用し、「文書でそのコードが一度でも出たか」を基準に
+code×method のクロス表を作成する。
+
+手順:
+(1) CSVを読み込む (io.loader.load_df)
+(2) 文書をトークン化する (preprocess.perdoc.analyze_docs_with_cache)
+(3) コーディング規則 (CODE_MAP) に基づき、文書ごとのコード出現有無を作る
+(4) method_group で手法カテゴリ化し、code×method のクロス集計を作る
+(5) CSVに保存し、標準出力に要約を出す
+
+出力:
+- {out_dir}/code_method_crosstab_docs.csv … 文書単位の出現有無ベースのクロス表
+
+<a id="quant_text_analysis.commands.cross_table.main"></a>
+
+#### main
+
+```python
+def main() -> None
+```
+
+エントリポイント。クロス集計を作成・保存する。
+
 <a id="quant_text_analysis.commands.freq_cli"></a>
 
 # quant\_text\_analysis.commands.freq\_cli
@@ -310,6 +355,37 @@ def main() -> None
 **Notes**:
 
   - `Settings.out_dir` が設定されている場合に CSV を書き出す。
+
+<a id="quant_text_analysis.commands.mnlr_cli"></a>
+
+# quant\_text\_analysis.commands.mnlr\_cli
+
+文書単位クラスタ・ロバストSE付き多項ロジットを可視化付きで実行する。
+
+手順:
+(1) CSV読み込み (io.loader.load_df)
+(2) トークン化 (preprocess.perdoc.analyze_docs_with_cache)
+(3) コーディング展開（1トークン=1観測）
+(4) MNLogit を推定し、文書クラスタでロバストSEを付加
+(5) 観測ごとの予測選択確率を計算
+(6) 年と手法で二次当てはめ+95%CIの図を作成
+
+注:
+図の作り方は Stata の `twoway qfitci`（二次回帰の当てはめ＋CI）に準拠。
+
+<a id="quant_text_analysis.commands.mnlr_cli.main"></a>
+
+#### main
+
+```python
+def main() -> None
+```
+
+パイプライン本体を実行し、推定結果と可視化を出力する。
+
+**Returns**:
+
+  None
 
 <a id="quant_text_analysis.commands.phrases_cli"></a>
 
@@ -934,6 +1010,227 @@ def save_cluster_ratio(out_dir: Path, k: int, M: np.ndarray) -> Path
 **Returns**:
 
 - `Path` - 生成された NPY ファイルのパス。
+
+<a id="quant_text_analysis.mnlr.coding"></a>
+
+# quant\_text\_analysis.mnlr.coding
+
+MNLR（多項ロジスティック回帰）で用いる、トークン→コード写像の補助関数群。
+
+<a id="quant_text_analysis.mnlr.coding.invert_code_map"></a>
+
+#### invert\_code\_map
+
+```python
+def invert_code_map(code_map: Dict[str, Tuple[str, ...]]) -> Dict[str, str]
+```
+
+最初に一致したトークンに対応するコードへの逆引きインデックスを作成して返す。
+
+**Arguments**:
+
+- `code_map` _dict[str, tuple[str, ...]]_ - コード名をキー、当該コードに属する
+  トークン列を値とする対応表。
+  
+
+**Returns**:
+
+  dict[str, str]: 各トークンをキー、最初に対応づけられたコード名を値とする辞書。
+  
+
+**Notes**:
+
+  1つのトークンが複数のコードに列挙されている場合は、`code_map` の走査順に
+  よって先勝ちで割り当てられる。
+
+<a id="quant_text_analysis.mnlr.coding.codes_per_doc"></a>
+
+#### codes\_per\_doc
+
+```python
+def codes_per_doc(per_doc_tokens: Sequence[Sequence[str]],
+                  code_index: Dict[str, str]) -> List[List[str]]
+```
+
+各文書のトークン列をコード列へ変換する。文書内では重複を排し、辞書順に整列する。
+
+**Arguments**:
+
+- `per_doc_tokens` _Sequence[Sequence[str]]_ - 文書ごとのトークン列。
+- `code_index` _dict[str, str]_ - トークン→コードの逆引きインデックス（`invert_code_map` の出力）。
+  
+
+**Returns**:
+
+- `list[list[str]]` - 文書ごとのコード列。各内側リストは一意なコードのみを含み、
+  辞書順（昇順）で並ぶ。
+
+<a id="quant_text_analysis.mnlr.coding.rows_from_tokens"></a>
+
+#### rows\_from\_tokens
+
+```python
+def rows_from_tokens(per_doc_tokens: Sequence[Sequence[str]], years: pd.Series,
+                     methods: pd.Series,
+                     code_index: Dict[str, str]) -> pd.DataFrame
+```
+
+文書ごとのトークン列を観測単位の行に展開し、DataFrame を返す。
+
+各トークンが `code_index` に存在する都度、1行（`doc_id`, `code`, `year`, `method`）を生成する。
+
+**Arguments**:
+
+- `per_doc_tokens` _Sequence[Sequence[str]]_ - 文書ごとのトークン列。
+- `years` _Iterable | pandas.Series_ - 各文書の出版年。`pandas.Series` でなくてもよいが、
+  長さが文書数と同じであること。
+- `methods` _Iterable | pandas.Series_ - 各文書の研究手法ラベル。
+- `code_index` _dict[str, str]_ - トークン→コードの逆引きインデックス。
+  
+
+**Returns**:
+
+- `pandas.DataFrame` - 列 `doc_id`, `code`, `year`, `method` を持つ長データ。
+  
+
+**Raises**:
+
+- `ValueError` - `years` と `methods` の長さが文書数と一致しない場合。
+
+<a id="quant_text_analysis.mnlr.model"></a>
+
+# quant\_text\_analysis.mnlr.model
+
+MNLR（多項ロジスティック回帰）モデルの設計・推定・予測を行う補助関数群。
+
+<a id="quant_text_analysis.mnlr.model.fit_mnlogit"></a>
+
+#### fit\_mnlogit
+
+```python
+def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual")
+```
+
+式インターフェースでMNLogitを推定し、ロバストSEを付ける。
+
+**Arguments**:
+
+- `df_obs` - 列 doc_id, code, year, method を持つ長形式データ。
+- `base_method` - 手法の基準水準。
+  
+
+**Returns**:
+
+- `tuple` - (robust_results, vanilla_results, categories)
+
+<a id="quant_text_analysis.mnlr.model.predict_probabilities"></a>
+
+#### predict\_probabilities
+
+```python
+def predict_probabilities(res, df_pred: pd.DataFrame,
+                          cats: List[str]) -> pd.DataFrame
+```
+
+式モデルの予測確率を返す（行=観測、列=コード）。
+
+**Arguments**:
+
+- `res` - MNLogitの通常結果。
+- `df_pred` - 列 year_centered, method（カテゴリ）等を含むデータ。
+- `cats` - コード名の順序。
+  
+
+**Returns**:
+
+- `pd.DataFrame` - 予測確率。
+
+<a id="quant_text_analysis.mnlr.plotting"></a>
+
+# quant\_text\_analysis.mnlr.plotting
+
+MNLR の確率要約を描画・保存するための補助関数。
+
+<a id="quant_text_analysis.mnlr.plotting.qfitci_like"></a>
+
+#### qfitci\_like
+
+```python
+def qfitci_like(ax, x: pd.Series, y: pd.Series, label: str) -> None
+```
+
+Stata の `qfitci` 風に、2次曲線による近似と 95% 信頼区間を描く。
+
+モデルは OLS: `y ~ 1 + x + x^2` を当てはめ、予測平均と信頼区間を描画する。
+
+**Arguments**:
+
+- `ax` _matplotlib.axes.Axes_ - 描画先の軸。
+- `x` _pandas.Series_ - 説明変数。
+- `y` _pandas.Series_ - 目的変数（確率など）。
+- `label` _str_ - 凡例に表示する系列名。
+  
+
+**Returns**:
+
+  None
+
+<a id="quant_text_analysis.mnlr.plotting.plot_prob_by_year_with_method"></a>
+
+#### plot\_prob\_by\_year\_with\_method
+
+```python
+def plot_prob_by_year_with_method(prob_df: pd.DataFrame, year: pd.Series,
+                                  method: pd.Series, out_dir) -> None
+```
+
+各コード列について、年×手法で 2 次近似曲線と 95% 信頼区間を重ねて PNG で保存する。
+
+**Arguments**:
+
+- `prob_df` _pandas.DataFrame_ - 予測確率の表。列はコード、行は観測。
+- `year` _pandas.Series_ - 観測ごとの年。
+- `method` _pandas.Series_ - 観測ごとの研究手法カテゴリ。
+- `out_dir` _pathlib.Path | str_ - 出力ディレクトリ。
+  
+
+**Returns**:
+
+  None
+  
+
+**Notes**:
+
+  観測数が 3 未満の手法カテゴリはスキップする。ファイル名は `prob_by_year_{code}.png`。
+
+<a id="quant_text_analysis.mnlr.tables"></a>
+
+# quant\_text\_analysis.mnlr.tables
+
+コード×研究手法のクロス集計を行うためのユーティリティ。
+
+<a id="quant_text_analysis.mnlr.tables.build_code_method_crosstab"></a>
+
+#### build\_code\_method\_crosstab
+
+```python
+def build_code_method_crosstab(per_doc_codes: Sequence[Sequence[str]],
+                               method: pd.Series,
+                               code_order: Sequence[str]) -> pd.DataFrame
+```
+
+文書単位で、コードの出現有無（1/0）を研究手法ごとに集計したクロス集計表を返す。
+
+**Arguments**:
+
+- `per_doc_codes` _Sequence[Sequence[str]]_ - 文書ごとのコード列。
+- `method` _pandas.Series_ - 文書ごとの研究手法ラベル。
+- `code_order` _Sequence[str]_ - 行の表示順に用いるコード名の並び。
+  
+
+**Returns**:
+
+- `pandas.DataFrame` - 行がコード、列が手法の 0/1 クロス集計。行名は `code`、列名は `method`。
 
 <a id="quant_text_analysis.preprocess.nlp_backend"></a>
 
