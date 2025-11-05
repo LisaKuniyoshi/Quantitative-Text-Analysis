@@ -64,7 +64,7 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "child",
         "detect"
     ),
-    "gender": ("female", "male", "gender", "boy", "girl", "woman", "man"),
+    "gender": ("female", "male", "gender", "woman", "man"),
     # クラスタ8, 10
     "mental health": (
         "mental_health",
