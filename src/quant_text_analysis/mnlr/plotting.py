@@ -26,16 +26,19 @@ def qfitci_like(ax, x: pd.Series, y: pd.Series, label: str) -> None:
         return
 
     Xq = pd.DataFrame({"const": 1.0, "x": x, "x2": x**2})
-    ols = sm.OLS(y, Xq).fit()
+    ols = sm.OLS(y, Xq).fit(cov_type="HC3")
 
     grid = np.linspace(float(x.min()), float(x.max()), 100)
     Xg = pd.DataFrame({"const": 1.0, "x": grid, "x2": grid**2})
-    pred = ols.get_prediction(Xg)
-    mean = pred.predicted_mean
-    ci = pred.conf_int(alpha=0.05)
+    pred = ols.get_prediction(Xg).summary_frame(alpha=0.05)
 
-    ax.plot(grid, mean, lw=2, label=label)
-    ax.fill_between(grid, ci[:, 0], ci[:, 1], alpha=0.2)
+    mean  = np.clip(pred["mean"].to_numpy(),          0.0, 1.0)
+    lower = np.clip(pred["obs_ci_lower"].to_numpy(),  0.0, 1.0)  # ← 観測予測区間
+    upper = np.clip(pred["obs_ci_upper"].to_numpy(),  0.0, 1.0)
+
+    line, = ax.plot(grid, mean, lw=2, label=label, zorder=2)
+    ax.fill_between(grid, lower, upper, alpha=0.2,
+                    color=line.get_color(), zorder=1)
 
 
 def plot_prob_by_year_with_method(
@@ -65,7 +68,7 @@ def plot_prob_by_year_with_method(
     for code in prob_df.columns:
         fig, ax = plt.subplots(figsize=(6, 4), dpi=120)
 
-        for m in method:
+        for m in method.unique():
             mask = (method == m)
 
             if mask.sum() < 3:
