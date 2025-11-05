@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from ..mnlr.statsmodels_fork import t_test_pairwise_mnlogit, pairwise_ame_mnlogit
 from quant_text_analysis.settings import Settings
 from quant_text_analysis.grouping import method_group
 from quant_text_analysis.io.loader import load_df
@@ -85,21 +86,32 @@ def main() -> None:
     # bse.to_csv(out_dir / "mlra_bse_cluster.csv", encoding="utf-8", index=True)
     # with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
     #     f.write(str(rob.summary()))
+    print("category map:", {f"y={j}": cat for j, cat in enumerate(cats)})
     print(rob.summary())
     print(rob.get_margeff().summary())
 
     # 5) 観測ごとの予測選択確率（モデルに基づく）
-    prob_df = predict_probabilities(res, df_for_pred, cats)
+    prob = predict_probabilities(res, df_for_pred, cats)    
 
-    # 6) 年×手法の二次当てはめ＋95%CIを描画（qfitci相当）
-    prob = predict_probabilities(res, df_for_pred, cats)
-    # 可視化メタ（年は素のyearを使用。methodは元カテゴリ）
+    # 6) 年と手法で二次当てはめ+95%CIの図を作成
     plot_prob_by_year_with_method(
         prob, 
         df_for_pred["year"], 
         df_for_pred["method"], 
         out_dir
     )
+
+    pw = pairwise_ame_mnlogit(rob, factor="method", base="qual", at="overall", alpha=0.05)
+
+    for eq, df_eq in pw.groupby("eq"):
+        print(f"[eq={eq}]")
+        print(df_eq.drop(columns=["eq"]).to_string(index=False))
+
+    pw = t_test_pairwise_mnlogit(rob, term_name="C(method, Treatment('qual'))", alpha=0.05)
+
+    for eq, df_eq in pw.groupby("eq"):
+        print(f"[eq={eq}]")
+        print(df_eq.drop(columns=["eq"]).to_string(index=False))
 
 if __name__ == "__main__":
     main()

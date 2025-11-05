@@ -5,7 +5,6 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 
@@ -38,7 +37,7 @@ def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual"):
         cov_kwds={"groups": df["doc_id"]},
     )
     cats = df["code"].cat.categories.tolist()
-    return robust, res, cats, df  # 予測では res を使う
+    return robust, res, cats, df
 
 
 def predict_probabilities(res, df_pred: pd.DataFrame, cats: List[str]) -> pd.DataFrame:
