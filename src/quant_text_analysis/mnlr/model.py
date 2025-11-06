@@ -7,6 +7,20 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 
+def make_formula(base_method: str, year_var="year_centered"):
+    interact_levels = ["quan", "quan", "theoretic"]
+
+    inter_terms = " + ".join(
+        f'{year_var}:I(method == "{lvl}")' for lvl in interact_levels
+    )
+
+    formula = (
+        f"code_num ~ {year_var} + C(method, Treatment('{base_method}'))"
+        + (f" + {inter_terms}" if inter_terms else "")
+    )
+
+    return formula
+
 
 def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual"):
     """式インターフェースでMNLogitを推定し、ロバストSEを付ける。
@@ -26,9 +40,18 @@ def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual"):
 
     df["code_num"] = df["code"].cat.codes
 
-    mod = smf.mnlogit(
-        f"code_num ~ year_centered + C(method, Treatment('{base_method}'))", data=df
+    # どうしてハードコードを？？
+    formula = (
+        f"code_num ~ year_centered"
+        f" + C(method, Treatment('{base_method}'))"
+        f" + C(method, Treatment('{base_method}')):year_centered"
     )
+
+    mod = smf.mnlogit(
+        formula,
+        data=df
+    )
+
     res = mod.fit(method="newton", maxiter=200, disp=False)
     robust = mod.fit(
         method="newton",

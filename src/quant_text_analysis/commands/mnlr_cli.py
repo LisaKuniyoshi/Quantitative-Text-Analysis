@@ -30,6 +30,7 @@ from quant_text_analysis.mnlr import (
     predict_probabilities,
     rows_from_tokens,
 )
+from ..mnlr.statsmodels_fork import wald_test_margeff
 from ..config import CODE_MAP, MNLR_EXCLUDE_METHODS
 
 
@@ -87,31 +88,40 @@ def main() -> None:
     # with open(out_dir / "mlra_summary.txt", "w", encoding="utf-8") as f:
     #     f.write(str(rob.summary()))
     print("category map:", {f"y={j}": cat for j, cat in enumerate(cats)})
-    print(rob.summary())
-    print(rob.get_margeff().summary())
+    # print(rob.summary())
+    # print(rob.get_margeff().summary())
 
-    # 5) 観測ごとの予測選択確率（モデルに基づく）
-    prob = predict_probabilities(res, df_for_pred, cats)    
-
-    # 6) 年と手法で二次当てはめ+95%CIの図を作成
-    plot_prob_by_year_with_method(
-        prob, 
-        df_for_pred["year"], 
-        df_for_pred["method"], 
-        out_dir
+    wald_method = wald_test_margeff(
+        rob, 
+        factor="method", 
+        base="qual",
+        at="overall", 
+        eq_alias={j: cats[j] for j in range(len(cats))}
     )
+    print(wald_method.to_string(index=False))
 
-    pw = pairwise_ame_mnlogit(rob, factor="method", base="qual", at="overall", alpha=0.05)
+    # # 5) 観測ごとの予測選択確率（モデルに基づく）
+    # prob = predict_probabilities(res, df_for_pred, cats)    
 
-    for eq, df_eq in pw.groupby("eq"):
-        print(f"[eq={eq}]")
-        print(df_eq.drop(columns=["eq"]).to_string(index=False))
+    # # 6) 年と手法で二次当てはめ+95%CIの図を作成
+    # plot_prob_by_year_with_method(
+    #     prob, 
+    #     df_for_pred["year"], 
+    #     df_for_pred["method"], 
+    #     out_dir
+    # )
 
-    pw = t_test_pairwise_mnlogit(rob, term_name="C(method, Treatment('qual'))", alpha=0.05)
+    # pw = pairwise_ame_mnlogit(rob, factor="method", base="qual", at="overall", alpha=0.05)
 
-    for eq, df_eq in pw.groupby("eq"):
-        print(f"[eq={eq}]")
-        print(df_eq.drop(columns=["eq"]).to_string(index=False))
+    # for eq, df_eq in pw.groupby("eq"):
+    #     print(f"[eq={eq}]")
+    #     print(df_eq.drop(columns=["eq"]).to_string(index=False))
+
+    # pw = t_test_pairwise_mnlogit(rob, term_name="C(method, Treatment('qual'))", alpha=0.05)
+
+    # for eq, df_eq in pw.groupby("eq"):
+    #     print(f"[eq={eq}]")
+    #     print(df_eq.drop(columns=["eq"]).to_string(index=False))
 
 if __name__ == "__main__":
     main()

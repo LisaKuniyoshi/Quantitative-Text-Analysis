@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
-import itertools
 import numpy as np
 import pandas as pd
+
 from statsmodels.stats.multitest import multipletests
+from statsmodels.base.model import LikelihoodModelResults
 from scipy.stats import norm
 
 
@@ -204,3 +205,119 @@ def pairwise_ame_mnlogit(
             sub["reject"] = sub["p"] < alpha
         outs.append(sub)
     return pd.concat(outs, ignore_index=True)
+
+# ------------------------------------------------------------
+# AME（get_margeff）のブロックWaldを行う最小アダプタと関数群
+# ------------------------------------------------------------
+
+class _VecResults:
+    """
+    LikelihoodModelResults.wald_test を流用するための極小結果オブジェクト。
+    params と cov_params() だけを実装する。
+    """
+    def __init__(self, theta: np.ndarray, Sigma: np.ndarray, names: list[str] | None = None):
+        self.params = np.asarray(theta)
+        self._cov = np.asarray(Sigma)
+        self.df_resid = np.inf
+        self.use_t = False  # AMEは大標本のカイ二乗で扱う
+        class _Model: pass
+        class _Data: pass
+        self.model = _Model()
+        self.model.data = _Data()
+        self.model.data.cov_names = (names if names is not None
+                                     else [f"m{i}" for i in range(self.params.size)])
+
+    def cov_params(self, r_matrix=None, cov_p=None):
+        return self._cov
+
+
+def _mfx_and_frame(rob, at: str = "overall"):
+    """
+    MultinomialResults -> (DiscreteMargins, summary_frame(DataFrame), cov(2D))
+    """
+    mfx = rob.get_margeff()
+    sf = mfx.summary_frame()  # 列例：["equation","variable","dy/dx",...]
+    # 共分散は statsmodels バージョンで属性名が異なることがある
+    Sigma_full = getattr(mfx, "cov", None) or getattr(mfx, "margeff_cov", None)
+    if Sigma_full is None:
+        raise RuntimeError("DiscreteMargins の共分散が取得できません。")
+    return mfx, sf, np.asarray(Sigma_full)
+
+
+def _extract_block(theta_frame: pd.DataFrame,
+                   Sigma_full: np.ndarray,
+                   row_index: np.ndarray):
+    """summary_frame の行インデックスに対応する (θ, Σ, names) を返す。"""
+    theta = theta_frame.loc[row_index, "dy/dx"].to_numpy()
+    Sigma = Sigma_full[np.ix_(row_index, row_index)]
+    names = theta_frame.loc[row_index, "variable"].astype(str).tolist()
+    return theta, Sigma, names
+
+
+def wald_test_margeff(rob,
+                      factor: str = "method",
+                      base: str = "qual",
+                      at: str = "overall",
+                      eq_alias: dict[int, str] | None = None,
+                      var_prefix: str | None = None) -> pd.DataFrame:
+    """
+    AME の「式ごとの factor 主効果（基準を除くカテゴリ）= 0」を
+    同時に検定する（ブロックWald, χ^2）。
+
+    Parameters
+    ----------
+    rob : MultinomialResults（ロバスト共分散付きが望ましい）
+    factor : str
+        例: "method"
+    base : str
+        例: "qual"（Treatment(base) の基準）
+    at : {"overall", ...}
+        get_margeff の 'at' 引数
+    eq_alias : {int -> str}, optional
+        出力で式番号に人間可読名を付けるマップ
+    var_prefix : str, optional
+        AME の summary_frame["variable"] を事前フィルタする接頭辞。
+        省略時は C(factor, Treatment(base)) を自動生成。
+
+    Returns
+    -------
+    DataFrame with columns:
+        ["eq", "k", "chi2", "df", "pvalue"]
+    """
+    _, sf, Sigma_full = _mfx_and_frame(rob, at=at)
+
+    # variable 名の接頭辞を決める（主効果）
+    if var_prefix is None:
+        var_prefix = f"C({factor}, Treatment('{base}'))["  # 例: C(method, Treatment('qual'))[T.quan]
+
+    display(sf)
+    # 「式」一覧（summary_frame の 'equation', 'eq', or 'endog' などを自動検出）
+    eq_col = "endog"
+
+    eq_values = pd.Index(sorted(sf[eq_col].unique()))
+    out_rows = []
+    out_rows = []
+
+    for eq in eq_values:
+        mask = (sf[eq_col] == eq) & sf["variable"].astype(str).str.startswith(var_prefix)
+        row_idx = sf.index[mask].to_numpy()
+        if row_idx.size == 0:
+            # この式に該当する AME がない（=基準のみ等）ならスキップ
+            continue
+
+        theta, Sigma, names = _extract_block(sf, Sigma_full, row_idx)
+        k = len(theta)
+        R = np.eye(k)
+
+        # LikelihoodModelResults.wald_test を「外部共分散 cov_p 指定」で呼ぶ
+        vec = _VecResults(theta, Sigma, names)
+        wt = LikelihoodModelResults.wald_test(vec, r_matrix=R, cov_p=Sigma,
+                                              use_f=False, scalar=False)  # χ^2
+
+        chi2 = float(np.asarray(wt.statistic))
+        pval = float(np.asarray(wt.pvalue))
+        eq_name = eq_alias.get(eq, eq) if eq_alias else eq
+        out_rows.append({"eq": eq_name, "k": k, "chi2": chi2,
+                         "df": int(wt.df_constraints), "pvalue": pval})
+
+    return pd.DataFrame(out_rows).sort_values("eq").reset_index(drop=True)

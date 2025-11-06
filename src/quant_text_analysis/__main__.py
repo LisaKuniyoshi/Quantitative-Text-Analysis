@@ -57,6 +57,9 @@ def main(argv: List[str] | None = None) -> int:
     sp_mnlr = subparsers.add_parser("mnlr", help="文書クラスタに対する多項ロジット推定と可視化",)
     sp_mnlr.set_defaults(_module="quant_text_analysis.commands.mnlr_cli")
 
+    sp_freq = subparsers.add_parser("cross_tab", help="クロス集計の実行")
+    sp_freq.set_defaults(_module="quant_text_analysis.commands.cross_table")
+
     ns = parser.parse_args(argv)
     return _dispatch(getattr(ns, "_module"))
 
