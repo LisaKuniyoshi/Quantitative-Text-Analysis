@@ -290,14 +290,13 @@ def wald_test_margeff(rob,
     if var_prefix is None:
         var_prefix = f"C({factor}, Treatment('{base}'))["  # 例: C(method, Treatment('qual'))[T.quan]
 
-    display(sf)
+    print(sf)
     # 「式」一覧（summary_frame の 'equation', 'eq', or 'endog' などを自動検出）
-    eq_col = "endog"
+    eq_col = "equation"
 
     eq_values = pd.Index(sorted(sf[eq_col].unique()))
     out_rows = []
-    out_rows = []
-
+    
     for eq in eq_values:
         mask = (sf[eq_col] == eq) & sf["variable"].astype(str).str.startswith(var_prefix)
         row_idx = sf.index[mask].to_numpy()
