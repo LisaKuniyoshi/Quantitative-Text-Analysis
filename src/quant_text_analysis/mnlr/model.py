@@ -1,24 +1,37 @@
 """MNLR（多項ロジスティック回帰）モデルの設計・推定・予測を行う補助関数群。"""
 
 from __future__ import annotations
-from typing import List
+
+from typing import List, Tuple
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import statsmodels.formula.api as smf
+from statsmodels.discrete.discrete_model import MultinomialResultsWrapper
 
 
-def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual"):
-    """式インターフェースでMNLogitを推定し、ロバストSEを付ける。
+def fit_mnlogit(
+    df_obs: pd.DataFrame,
+    base_method: str = "qual",
+) -> Tuple[
+    MultinomialResultsWrapper,
+    MultinomialResultsWrapper,
+    List[str],
+    pd.DataFrame,
+]:
+    """式インターフェースで MNLogit を推定し、クラスタロバスト推定量も取得します。
 
     Args:
-        df_obs: 列 doc_id, code, year, method を持つ長形式データ。
-        base_method: 手法の基準水準。
+        df_obs (pd.DataFrame): ``doc_id`` ``code`` ``year`` ``method`` 列を持つ長形式データ。
+        base_method (str, optional): ``method`` の基準水準。既定は ``"qual"`` 。
 
     Returns:
-        tuple: (robust_results, vanilla_results, categories)
+        Tuple[MultinomialResultsWrapper, MultinomialResultsWrapper, List[str], pd.DataFrame]:
+            クラスタロバスト結果、通常推定結果、コード名のリスト、学習に使用した
+            前処理済みデータフレーム。
     """
-    df = df_obs.copy()
+    df: pd.DataFrame = df_obs.copy()
     df["code"] = df["code"].astype("category")
     df["method"] = df["method"].astype("category")
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
@@ -29,28 +42,36 @@ def fit_mnlogit(df_obs: pd.DataFrame, base_method: str = "qual"):
     mod = smf.mnlogit(
         f"code_num ~ year_centered + C(method, Treatment('{base_method}'))", data=df
     )
-    res = mod.fit(method="newton", maxiter=200, disp=False)
-    robust = mod.fit(
+    res: MultinomialResultsWrapper = mod.fit(
+        method="newton",
+        maxiter=200,
+        disp=False,
+    )
+    robust: MultinomialResultsWrapper = mod.fit(
         method="newton",
         disp=False,
         cov_type="cluster",
         cov_kwds={"groups": df["doc_id"]},
     )
-    cats = df["code"].cat.categories.tolist()
+    cats: List[str] = df["code"].cat.categories.tolist()
     return robust, res, cats, df
 
 
-def predict_probabilities(res, df_pred: pd.DataFrame, cats: List[str]) -> pd.DataFrame:
-    """式モデルの予測確率を返す（行=観測、列=コード）。
+def predict_probabilities(
+    res: MultinomialResultsWrapper,
+    df_pred: pd.DataFrame,
+    cats: List[str],
+) -> pd.DataFrame:
+    """MNLogit の推定結果からコードごとの予測確率を計算します。
 
     Args:
-        res: MNLogitの通常結果。
-        df_pred: 列 year_centered, method（カテゴリ）等を含むデータ。
-        cats: コード名の順序。
+        res (MultinomialResultsWrapper): `fit_mnlogit` が返す推定結果の一つ。
+        df_pred (pd.DataFrame): 予測対象データ。``year_centered`` ``method`` などの列を含む。
+        cats (List[str]): 予測確率の列順に対応するコード名のリスト。
 
     Returns:
-        pd.DataFrame: 予測確率。
+        pandas.DataFrame: 観測を行方向、コードを列方向に持つ予測確率表。
     """
-    p = res.predict(df_pred)  # (n, K)
-    cols = list(cats)
-    return pd.DataFrame(np.asarray(p), columns=cols, index=df_pred.index)
+    p: npt.NDArray[np.float_] = np.asarray(res.predict(df_pred), dtype=float)
+    cols: List[str] = list(cats)
+    return pd.DataFrame(p, columns=cols, index=df_pred.index)
