@@ -250,7 +250,7 @@ def _extract_block(theta_frame: pd.DataFrame,
     """summary_frame の行インデックスに対応する (θ, Σ, names) を返す。"""
     theta = theta_frame.loc[row_index, "dy/dx"].to_numpy()
     Sigma = Sigma_full[np.ix_(row_index, row_index)]
-    names = theta_frame.loc[row_index, "variable"].astype(str).tolist()
+    names = theta_frame.loc[row_index, "exog"].astype(str).tolist()
     return theta, Sigma, names
 
 
@@ -285,20 +285,20 @@ def wald_test_margeff(rob,
         ["eq", "k", "chi2", "df", "pvalue"]
     """
     _, sf, Sigma_full = _mfx_and_frame(rob, at=at)
+    sf = sf.reset_index()
 
     # variable 名の接頭辞を決める（主効果）
     if var_prefix is None:
         var_prefix = f"C({factor}, Treatment('{base}'))["  # 例: C(method, Treatment('qual'))[T.quan]
 
-    print(sf)
     # 「式」一覧（summary_frame の 'equation', 'eq', or 'endog' などを自動検出）
-    eq_col = "equation"
+    eq_col = "endog"
 
     eq_values = pd.Index(sorted(sf[eq_col].unique()))
     out_rows = []
     
     for eq in eq_values:
-        mask = (sf[eq_col] == eq) & sf["variable"].astype(str).str.startswith(var_prefix)
+        mask = (sf[eq_col] == eq) & sf["exog"].astype(str).str.startswith(var_prefix)
         row_idx = sf.index[mask].to_numpy()
         if row_idx.size == 0:
             # この式に該当する AME がない（=基準のみ等）ならスキップ
