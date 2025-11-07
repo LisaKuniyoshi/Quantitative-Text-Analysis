@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -17,14 +17,14 @@ def _empty_df() -> pd.DataFrame:
 # r(d,w) のグループ集計（純粋関数）
 
 def frequency_rankings(
-    per_doc_freqs: List[Dict[str, float]],
-    groups: Optional[List[Optional[str]]] = None,
-) -> Dict[str, pd.DataFrame]:
+    per_doc_freqs: list[dict[str, float]],
+    groups: Optional[list[list[str]]] = None,
+) -> dict[str, pd.DataFrame]:
     """語相対頻度をグループ別に集計しランキングを生成する。
 
     Args:
         per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度分布。
-        groups (list[str | None] | None): 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
+        groups (list[list[str]] | None): 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
 
     Returns:
         dict[str, pandas.DataFrame]: グループ ID をキーに持つランキング表。
@@ -35,15 +35,15 @@ def frequency_rankings(
     X: sp.csr_matrix = sp.csr_matrix(vec.fit_transform(per_doc_freqs), copy=False)
     feature_names: np.ndarray = np.asarray(vec.get_feature_names_out(), dtype=str)
 
-    gvec: List[str] = ["ALL"] * n_docs if groups is None else [g or "__NULL__" for g in groups]
+    group_docs: dict[str, list[int]] = {}
+    if groups is None:
+        group_docs = {"ALL": [i for i in range(n_docs)]}
+    else:
+        for i, g in enumerate(groups):
+            for gg in g:
+                group_docs.setdefault(str(gg), []).append(i)
 
-    group_docs: Dict[str, List[int]] = {}
-    for i, g in enumerate(gvec):
-        if g == "__NULL__":
-            continue
-        group_docs.setdefault(g, []).append(i)
-
-    out: Dict[str, pd.DataFrame] = {}
+    out: dict[str, pd.DataFrame] = {}
     for g, idxs in group_docs.items():
         if not idxs:
             out[g] = _empty_df()
