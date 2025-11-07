@@ -10,7 +10,7 @@
 2. **フレーズ抽出** (`phrases`) - Gensim Phrasesを用いたbigram/trigramの候補抽出
 3. **単語クラスタリング** (`cluster`) - 文書×語頻度を SVD で次元削減し、球面 k-means で単語をクラスタリング
 4. **コード×手法クロス集計** (`cross_table`) - 文書単位でコード出現有無を集計し、研究手法カテゴリと対比
-5. **多項ロジット推定と可視化** (`mnlr`) - コード出現データを多項ロジスティック回帰で推定し、年×手法ごとの予測確率を可視化
+5. **多項ロジット推定と周辺効果比較** (`mnlr`) - コード出現データを多項ロジスティック回帰で推定し、年×手法ごとの効果とペアワイズ差を評価
 
 ## 必要な環境
 
@@ -142,15 +142,17 @@ python -m quant_text_analysis mnlr
 ```
 
 **出力ファイル:**
-- `outputs/{タイムスタンプ}/mlra_params.csv` - 推定係数（カテゴリ別）
-- `outputs/{タイムスタンプ}/mlra_bse_cluster.csv` - 文書クラスタロバスト標準誤差
-- `outputs/{タイムスタンプ}/mlra_summary.txt` - 推定結果サマリ（statsmodels出力）
-- `outputs/{タイムスタンプ}/prob_by_year_{code}.png` - 年×研究手法ごとの予測確率を二次近似した可視化
+- `outputs/{タイムスタンプ}/mnlogit_summary.txt` - MNLogit 推定結果の全文サマリ
+- `outputs/{タイムスタンプ}/margeff_year_centered.csv` - `year_centered` の平均限界効果と標準誤差
+- `outputs/{タイムスタンプ}/pairwise_ame_mnlogit.csv` - 手法カテゴリ間の平均限界効果差に対するペアワイズ検定結果
 
 **特徴:**
 - 文書 ID をクラスタとするロバスト共分散推定を実施
-- 観測ごとの予測確率を算出し、Stata の `qfitci` 相当の信頼区間付きプロットを生成
+- `pairwise_ame_mnlogit` を用いて手法カテゴリ間の平均限界効果差を多重比較補正付きで評価
+- `t_test_pairwise_mnlogit` により係数レベルでのペアワイズ t 検定も実行可能（スクリプトから呼び出し）
 - コード定義は `config.CODE_MAP` を参照
+
+ペアワイズ検定ユーティリティ（`quant_text_analysis.mnlr.statsmodels_fork`）は、statsmodels の公開 API のみを利用しており、平均限界効果または係数差についてロバスト共分散を尊重した検定結果を DataFrame で取得できます。*** End Patch
 
 ## 設定のカスタマイズ
 
@@ -183,42 +185,61 @@ random_seed: int = 42        # 乱数シード
 
 ```
 Quantitative-Text-Analysis/
+├── data/
+│   ├── cache/
+│   └── raw/
+│       ├── エクスポートされたアイテム.csv
+│       └── エクスポートされたアイテム.txt
 ├── src/
 │   └── quant_text_analysis/
-│       ├── __main__.py              # エントリーポイント
-│       ├── settings.py              # 設定管理
-│       ├── commands/                # 各コマンドの実装
-│       │   ├── freq_cli.py         # 頻出語分析
-│       │   ├── phrases_cli.py      # フレーズ抽出
-│       │   ├── cluster_cli.py      # クラスタリング
-│       │   ├── cross_table.py      # コード×手法クロス集計
-│       │   └── mnlr_cli.py         # 多項ロジット推定
-│       ├── preprocess/              # 前処理モジュール
-│       │   ├── nlp_backend.py      # spaCy処理
-│       │   ├── normalize.py        # トークン正規化
-│       │   └── perdoc.py           # 文書ごとの処理
-│       ├── features/                # 特徴量計算
-│       │   ├── embeddings.py       # Truncated SVD (Singular Value Decomposition) 埋め込み
-│       │   ├── frequency.py        # TF (term frequency) 計算
-│       │   └── ppmi.py             # PPMI (Positive Pointwise Mutual Information) 計算
-│       ├── cluster/                 # クラスタリング実装
-│       │   ├── algorithms.py       # L2正規化、spherical k-means
-│       │   └── metrics.py          # クラスタごとの上位語抽出、安定性計算、文書ごとのクラスタ比率計算。
-│       ├── io/                      # 入出力処理
-│       │   ├── loader.py           # データ読み込み
-│       │   └── writers.py          # 結果書き出し
-│       ├── grouping.py              # グルーピング処理
-│       └── mnlr/                    # 多項ロジット関連ユーティリティ
-│           ├── coding.py           # コード展開ロジック
-│           ├── model.py            # 設計・推定補助
-│           ├── plotting.py         # 予測確率の可視化
-│           └── tables.py           # コード×手法クロス表作成
-├── data/
-│   ├── raw/                         # 入力データ
-│   └── cache/                       # キャッシュファイル
-├── outputs/                         # 出力結果
-├── pyproject.toml                   # パッケージ設定
-└── requirements.txt                 # 依存パッケージ
+│       ├── __init__.py
+│       ├── __main__.py               # エントリーポイント
+│       ├── cluster/
+│       │   ├── __init__.py
+│       │   ├── algorithms.py
+│       │   └── metrics.py
+│       ├── commands/
+│       │   ├── __init__.py
+│       │   ├── cluster_cli.py
+│       │   ├── cross_table.py
+│       │   ├── freq_cli.py
+│       │   ├── mnlr_cli.py
+│       │   └── phrases_cli.py
+│       ├── config.py
+│       ├── data_types.py
+│       ├── features/
+│       │   ├── __init__.py
+│       │   ├── embeddings.py
+│       │   ├── frequency.py
+│       │   ├── ppmi.py
+│       │   └── vocab_selection.py
+│       ├── grouping.py
+│       ├── io/
+│       │   ├── __init__.py
+│       │   ├── loader.py
+│       │   └── writers.py
+│       ├── mnlr/
+│       │   ├── __init__.py
+│       │   ├── coding.py
+│       │   ├── model.py
+│       │   ├── plotting.py
+│       │   ├── statsmodels_fork.py
+│       │   └── tables.py
+│       ├── preprocess/
+│       │   ├── __init__.py
+│       │   ├── nlp_backend.py
+│       │   ├── normalize.py
+│       │   └── perdoc.py
+│       └── settings.py
+├── src/quant_text_analysis.egg-info/
+├── outputs/
+├── .gitignore
+├── constraints.txt
+├── docs.md
+├── pydoc-markdown.yaml
+├── pyproject.toml
+├── README.md
+└── requirements.txt
 ```
 
 ## キャッシュ機能
