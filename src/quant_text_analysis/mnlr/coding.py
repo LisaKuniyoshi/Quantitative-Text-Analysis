@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 import pandas as pd
 
-
-RowType = Tuple[int, str, int | float | None, str | None]
-
+METHOD_COLUMNS: tuple[str, ...] = ("qual", "quan", "review", "theoretic")
 
 def invert_code_map(code_map: Dict[str, Tuple[str, ...]]) -> Dict[str, str]:
     """最初に一致したトークンに対応するコードへの逆引きインデックスを作成して返す。
@@ -58,29 +56,48 @@ def rows_from_tokens(
     methods: pd.Series,
     code_index: Dict[str, str],
 ) -> pd.DataFrame:
-    """文書ごとのトークン列を観測単位の行に展開し、DataFrame を返す。
+    """文書ごとのトークン列を観測単位の行に展開し、マルチホット手法ダミーを付与する。
 
-    各トークンが `code_index` に存在する都度、1行（`doc_id`, `code`, `year`, `method`）を生成する。
+    各トークンが `code_index` に存在する都度、1 行（`doc_id`, `code`, `year`）を生成し、
+    併せて手法カテゴリのダミー列（`qual`, `quan`, `review`, `theoretic`）を付与する。
 
     Args:
         per_doc_tokens (Sequence[Sequence[str]]): 文書ごとのトークン列。
-        years (Iterable | pandas.Series): 各文書の出版年。`pandas.Series` でなくてもよいが、
-            長さが文書数と同じであること。
-        methods (Iterable | pandas.Series): 各文書の研究手法ラベル。
+        years (pandas.Series): 各文書の出版年。
+        methods (pandas.Series): 各文書の研究手法ラベル集合（list[str]）。
         code_index (dict[str, str]): トークン→コードの逆引きインデックス。
 
     Returns:
-        pandas.DataFrame: 列 `doc_id`, `code`, `year`, `method` を持つ長データ。
+        pandas.DataFrame: 列 `doc_id`, `code`, `year`, `qual`, `quan`, `review`, `theoretic`
+        を持つ長データ。
 
     Raises:
-        ValueError: `years` と `methods` の長さが文書数と一致しない場合。
+        ValueError: `per_doc_tokens`, `years`, `methods` の長さが一致しない場合。
     """
-    rows: List[Tuple[int, str, int | float, str]] = []
+    n_docs = len(per_doc_tokens)
+    if len(years) != n_docs or len(methods) != n_docs:
+        raise ValueError("per_doc_tokens, years, methods の長さが一致しません。")
+
+    rows: List[dict[str, int | str | float]] = []
     for doc_id, toks in enumerate(per_doc_tokens):
         yr = years.iloc[doc_id]
-        md = methods.iloc[doc_id]
+        method_flags = {name: 0 for name in METHOD_COLUMNS}
+        method_set = {str(tag) for tag in methods.iloc[doc_id]}
+        for name in METHOD_COLUMNS:
+            if name in method_set:
+                method_flags[name] = 1
+
         for tok in toks:
             code = code_index.get(tok)
-            if code is not None:
-                rows.append((doc_id, code, yr, md))
-    return pd.DataFrame(rows, columns=["doc_id", "code", "year", "method"])
+            if code is None:
+                continue
+            row = {
+                "doc_id": doc_id,
+                "code": code,
+                "year": yr,
+            }
+            row.update(method_flags)
+            rows.append(row)
+
+    columns: List[str] = ["doc_id", "code", "year", *METHOD_COLUMNS]
+    return pd.DataFrame(rows, columns=columns)

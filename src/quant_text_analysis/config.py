@@ -39,12 +39,14 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
     ),
     # クラスタ11
     "engagement": (
+        "social",
         "desire",
         "day_to_day",
         "engagement",
         "interpersonal",
         "everyday",
         "connection",
+        "social_interaction",
     ),
     # クラスタ18
     "gap": (

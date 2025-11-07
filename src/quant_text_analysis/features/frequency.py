@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -24,10 +24,14 @@ def frequency_rankings(
 
     Args:
         per_doc_freqs (list[dict[str, float]]): 文書ごとの語相対頻度分布。
-        groups (list[list[str]] | None): 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
+        groups (list[list[str]] | None): 文書が属するグループラベル。
+            文書ごとに 0 個以上のグループ ID を指定でき、複数のグループに
+            属する文書は各グループへ重複して集計される。None の場合は
+            全件を単一グループ "ALL" にまとめる。
 
     Returns:
         dict[str, pandas.DataFrame]: グループ ID をキーに持つランキング表。
+            紐づけられた文書が存在しない場合は空の DataFrame を返す。
     """
     n_docs: int = len(per_doc_freqs)
 

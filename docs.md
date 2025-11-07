@@ -703,9 +703,8 @@ SVD 埋め込みをキャッシュから取得または計算して返す。
 
 ```python
 def frequency_rankings(
-        per_doc_freqs: List[Dict[str, float]],
-        groups: Optional[List[Optional[str]]] = None
-) -> Dict[str, pd.DataFrame]
+        per_doc_freqs: list[dict[str, float]],
+        groups: Optional[list[list[str]]] = None) -> dict[str, pd.DataFrame]
 ```
 
 語相対頻度をグループ別に集計しランキングを生成する。
@@ -713,7 +712,7 @@ def frequency_rankings(
 **Arguments**:
 
 - `per_doc_freqs` _list[dict[str, float]]_ - 文書ごとの語相対頻度分布。
-- `groups` _list[str | None] | None_ - 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
+- `groups` _list[list[str]] | None_ - 文書が属するグループラベル。None の場合は全件を単一グループ扱い。
   
 
 **Returns**:
@@ -844,38 +843,38 @@ Grouping helpers used by frequency and clustering analyses.
 #### period\_group\_year
 
 ```python
-def period_group_year(y: Optional[int]) -> Optional[str]
+def period_group_year(y: int) -> list[str]
 ```
 
 発行年から集計用の期間ラベルを生成する。
 
 **Arguments**:
 
-- `y` _int | None_ - 発行年。NaN もしくは None の場合は未分類とみなす。
+- `y` _int_ - 発行年。
   
 
 **Returns**:
 
-  str | None: 期間ラベル。該当しない場合は None。
+- `str` - 期間ラベル。該当しない場合は例外を送出する。
 
 <a id="quant_text_analysis.grouping.method_group"></a>
 
 #### method\_group
 
 ```python
-def method_group(tags: Optional[str]) -> Optional[str]
+def method_group(tags: str) -> list[str]
 ```
 
 手動タグから研究手法カテゴリを推定する。
 
 **Arguments**:
 
-- `tags` _str | None_ - セミコロン区切りの手法タグ文字列。
+- `tags` _str_ - セミコロン区切りの手法タグ文字列。
   
 
 **Returns**:
 
-  str | None: 推定されたカテゴリ。該当しない場合は None。
+  list[str] : 推定されたカテゴリのリスト。
 
 <a id="quant_text_analysis.io.loader"></a>
 

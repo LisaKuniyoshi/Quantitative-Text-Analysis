@@ -9,7 +9,10 @@ def period_group_year(y: int) -> list[str]:
         y (int): 発行年。
 
     Returns:
-        str: 期間ラベル。該当しない場合は例外を送出する。
+        list[str]: 該当する期間ラベルを 1 要素のリストで返す。
+
+    Raises:
+        ValueError: 期待される期間の範囲外の年が渡された場合。
     """
     if 2014 <= y <= 2021:
         return ["2014–2021"]
@@ -31,7 +34,9 @@ def method_group(tags: str) -> list[str]:
         tags (str): セミコロン区切りの手法タグ文字列。
 
     Returns:
-        list[str] : 推定されたカテゴリのリスト。
+        list[str]: 認識された研究手法カテゴリのリスト。
+            `_METHOD_TAGS` に含まれるトークンのみが保持され、同一文書が
+            複数のカテゴリに属する場合は複数要素を返す。
     """
     out: list[str] = []
     for raw in tags.split(";"):
