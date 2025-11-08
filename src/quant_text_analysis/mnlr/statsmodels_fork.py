@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -14,12 +14,6 @@ from statsmodels.stats.multitest import multipletests
 
 
 FloatArray = npt.NDArray[np.float_]
-MULTITEST_METHOD_MAP: Dict[str, str] = {
-    "holm-sidak": "hs",
-    "bonferroni": "bonf",
-    "fdr_bh": "fdr_bh",
-}
-
 
 def _ensure_float(value: Any) -> float:
     """Return a Python float converted from statsmodels/pandas scalar outputs."""
@@ -31,7 +25,7 @@ def t_test_pairwise_mnlogit(
     res: MultinomialResults | MultinomialResultsWrapper,
     term_name: str,
     alpha: float = 0.05,
-    method: str = "holm-sidak",
+    mt_method: str = "holm-sidak",
 ) -> pd.DataFrame:
     """指定したカテゴリ効果に対して係数差のペアワイズ t 検定を実施します。
 
@@ -118,7 +112,6 @@ def t_test_pairwise_mnlogit(
 
     # 6) 式ごとに多重比較補正
     outs: List[pd.DataFrame] = []
-    method_code: str = MULTITEST_METHOD_MAP.get(method, "hs")
     for eq in range(k_eq):
         sub: pd.DataFrame = out.loc[out["eq"] == eq].copy()
         # ペアが1つだけなら multipletests は不要
@@ -126,7 +119,7 @@ def t_test_pairwise_mnlogit(
             rej, p_adj, _, _ = multipletests(
                 sub["p"].to_numpy(),
                 alpha=alpha,
-                method=method_code,
+                method=mt_method,
             )
             sub["p_adj"] = p_adj
             sub["reject"] = rej
@@ -138,7 +131,7 @@ def t_test_pairwise_mnlogit(
     return pd.concat(outs, ignore_index=True)
 
 
-def pairwise_ame_mnlogit(
+def pairwise_ame_categorical(
     rob: MultinomialResults | MultinomialResultsWrapper,
     factor: str = "method",
     base: str = "qual",
@@ -256,14 +249,13 @@ def pairwise_ame_mnlogit(
     # 多重補正（各 outcome 内）
     out_df: pd.DataFrame = pd.DataFrame(out_rows)
     outs: List[pd.DataFrame] = []
-    method_code = MULTITEST_METHOD_MAP.get(mt_method, mt_method)
     for outcome in out_df["eq"].unique():
         sub: pd.DataFrame = out_df.loc[out_df["eq"] == outcome].copy()
         if len(sub) > 1:
             rej, p_adj, _, _ = multipletests(
                 sub["p"].to_numpy(),
                 alpha=alpha,
-                method=method_code,
+                method=mt_method,
             )
             sub["p_adj"] = p_adj
             sub["reject"] = rej
@@ -271,4 +263,131 @@ def pairwise_ame_mnlogit(
             sub["p_adj"] = sub["p"]
             sub["reject"] = sub["p"] < alpha
         outs.append(sub)
+    return pd.concat(outs, ignore_index=True)
+
+def pairwise_ame_multihot(
+    rob: MultinomialResults | MultinomialResultsWrapper,
+    columns: Sequence[str] | None = None,
+    at: str = "overall",
+    alpha: float = 0.05,
+    mt_method: str = "holm-sidak",
+) -> pd.DataFrame:
+    """平均限界効果に基づくダミー変数間のペア比較を行います。"""
+
+    mfx: DiscreteMargins = rob.get_margeff(at=at, method="dydx")
+    sf: pd.DataFrame = mfx.summary_frame()
+    rows_sf: pd.DataFrame = sf.reset_index(drop=False)
+
+    if "exog" in rows_sf.columns:
+        var_col = "exog"
+    elif "level_1" in rows_sf.columns:
+        var_col = "level_1"
+    else:
+        raise ValueError("exog column not found in marginal effects summary")
+
+    if "endog" in rows_sf.columns:
+        out_col = "endog"
+    elif "level_0" in rows_sf.columns:
+        out_col = "level_0"
+    else:
+        raise ValueError("endog column not found in marginal effects summary")
+
+    dy_col = "dy/dx"
+    se_col = "Std. Err."
+
+    cov = (
+        getattr(mfx, "cov", None)
+        or getattr(mfx, "cov_margins", None)
+        or getattr(mfx, "cov_margeff", None)
+    )
+    if cov is not None:
+        cov = np.asarray(cov)
+
+    # 2) (outcome, level) → 行インデックスの対応を作る
+    idx_map: Dict[Tuple[str, str], int] = {}
+    for row_idx, row in enumerate(rows_sf.itertuples(index=False, name=None)):
+        row_dict = dict(zip(rows_sf.columns, row))
+        outcome_name = str(row_dict[out_col])
+        exog_name = str(row_dict[var_col])
+        idx_map[(outcome_name, exog_name)] = row_idx
+
+    all_outcomes = {key[0] for key in idx_map}
+    if columns is None:
+        candidate_cols = {key[1] for key in idx_map if key[1] not in {"const"}}
+        ordered_cols: List[str] = sorted(candidate_cols)
+    else:
+        ordered_cols = [
+            col for col in columns if any((out, col) in idx_map for out in all_outcomes)
+        ]
+
+    if len(ordered_cols) < 2:
+        raise ValueError("ペア比較に使用できるダミー列が 2 つ未満です。")
+
+    outcomes: List[str] = sorted(all_outcomes)
+    out_rows: List[Dict[str, float | str]] = []
+
+    for outcome in outcomes:
+        present_cols = [col for col in ordered_cols if (outcome, col) in idx_map]
+        if len(present_cols) < 2:
+            continue
+
+        for idx_a, col_a in enumerate(present_cols):
+            ia = idx_map[(outcome, col_a)]
+            ame_a = _ensure_float(rows_sf.loc[ia, dy_col])
+            if cov is not None:
+                var_aa = _ensure_float(cov[ia, ia])
+            else:
+                sigma_a = _ensure_float(rows_sf.loc[ia, se_col])
+                var_aa = sigma_a**2
+
+            for col_b in present_cols[idx_a + 1 :]:
+                ib = idx_map[(outcome, col_b)]
+                ame_b = _ensure_float(rows_sf.loc[ib, dy_col])
+                if cov is not None:
+                    var_bb = _ensure_float(cov[ib, ib])
+                    cov_ab = _ensure_float(cov[ia, ib])
+                    var_diff = var_aa + var_bb - 2.0 * cov_ab
+                else:
+                    sigma_b = _ensure_float(rows_sf.loc[ib, se_col])
+                    var_bb = sigma_b**2
+                    var_diff = var_aa + var_bb
+
+                diff = float(ame_a - ame_b)
+                se = float(np.sqrt(max(var_diff, 0.0)))
+                z = float(diff / se) if se > 0 else np.nan
+                p = float(2 * (1 - norm.cdf(abs(z)))) if se > 0 else np.nan
+
+                out_rows.append(
+                    {
+                        "eq": outcome,
+                        "level_a": col_a,
+                        "level_b": col_b,
+                        "AME_diff": diff,
+                        "SE": se,
+                        "z": z,
+                        "p": p,
+                    }
+                )
+
+    # 多重補正（各 outcome 内）
+    out_df: pd.DataFrame = pd.DataFrame(out_rows)
+    if out_df.empty:
+        raise ValueError("指定したダミー列に対応する AME が見つかりませんでした。")
+
+    outs: List[pd.DataFrame] = []
+    for outcome in out_df["eq"].unique():
+        sub: pd.DataFrame = out_df.loc[out_df["eq"] == outcome].copy()
+        if len(sub) > 1:
+            rej, p_adj, _, _ = multipletests(
+                sub["p"].to_numpy(),
+                alpha=alpha,
+                method=mt_method,
+            )
+            sub["p_adj"] = p_adj
+            sub["reject"] = rej
+        else:
+            sub["p_adj"] = sub["p"]
+            sub["reject"] = sub["p"] < alpha
+        outs.append(sub)
+
     return pd.concat(outs, ignore_index=True)
