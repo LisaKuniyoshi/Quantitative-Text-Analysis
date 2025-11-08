@@ -47,10 +47,11 @@ pip install -e .
 分析対象のデータは、以下のパスに配置してください：
 - デフォルトパス: `data/raw/エクスポートされたアイテム.csv`
 
-CSVファイルには以下の列が必要です：
+CSVファイルには以下の列が必要です (Zotero のエクスポート機能を想定)：
 - `abstract`: 論文の要旨（英語テキスト）
-- `year`: 出版年
-- `manual_tags`: 手作業でのタグ付け（研究手法の分類など）
+- `year`: 出版年（2014-2025 の範囲に収まる必要あり）
+- `manual_tags`: 手作業でのタグ付け。`qual`, `quan`, `theoretic`, `review`, `other`
+  をセミコロン区切りで記述し、複数タグを付した場合は各カテゴリに重複集計される。
 
 ## 使用方法
 
@@ -78,6 +79,8 @@ python -m quant_text_analysis freq
 - theoretic (理論研究)
 - review (レビュー研究)
 - other (その他)
+
+同一文書が複数の手法タグを持つ場合は、上記の各カテゴリに重複して集計されます。
 
 ### 2. フレーズ抽出 (phrases)
 
@@ -147,8 +150,11 @@ python -m quant_text_analysis mnlr
 - `outputs/{タイムスタンプ}/pairwise_ame_mnlogit.csv` - 手法カテゴリ間の平均限界効果差に対するペアワイズ検定結果
 
 **特徴:**
+- 手法タグはセミコロン区切りの複数指定に対応し、`qual`/`quan`/`review`/`theoretic`
+  をマルチホットなダミー変数としてモデルへ投入します。
 - 文書 ID をクラスタとするロバスト共分散推定を実施
 - `pairwise_ame_mnlogit` を用いて手法カテゴリ間の平均限界効果差を多重比較補正付きで評価
+- `pairwise_ame_multihot` により複数のマルチホットダミー列間で平均限界効果のペア比較を実行
 - `t_test_pairwise_mnlogit` により係数レベルでのペアワイズ t 検定も実行可能（スクリプトから呼び出し）
 - コード定義は `config.CODE_MAP` を参照
 

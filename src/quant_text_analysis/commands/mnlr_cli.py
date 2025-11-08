@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 import pandas as pd
 from pandas import Series
@@ -28,13 +28,14 @@ from quant_text_analysis.mnlr import (
     invert_code_map,
     rows_from_tokens,
 )
+from quant_text_analysis.mnlr.coding import METHOD_COLUMNS
 from quant_text_analysis.preprocess.nlp_backend import SpacyBackend
 from quant_text_analysis.preprocess.normalize import build_normalizer
 from quant_text_analysis.preprocess.perdoc import analyze_docs_with_cache
 from quant_text_analysis.settings import Settings
 
-from ..config import CODE_MAP, MNLR_EXCLUDE_METHODS
-from ..mnlr.statsmodels_fork import pairwise_ame_mnlogit
+from quant_text_analysis.config import CODE_MAP, MNLR_EXCLUDE_METHODS
+from quant_text_analysis.mnlr.statsmodels_fork import pairwise_ame_multihot
 
 
 def main() -> None:
@@ -63,7 +64,11 @@ def main() -> None:
 
     # 2) コーディング→観測展開
     exclude_methods: set[str] = set(MNLR_EXCLUDE_METHODS)
-    keep_mask: Series = ~methods.isin(exclude_methods)
+
+    def _should_keep(tags: Sequence[str]) -> bool:
+        return not any(tag in exclude_methods for tag in tags)
+
+    keep_mask: Series = methods.apply(_should_keep)
     if not keep_mask.any():
         raise RuntimeError(
             "除外設定後にMNLogitへ投入できる文書がありません。"
@@ -90,16 +95,18 @@ def main() -> None:
     res: MultinomialResultsWrapper
     cats: List[str]
     df_for_pred: pd.DataFrame
-    rob, res, cats, df_for_pred = fit_mnlogit(df_obs, base_method="qual")
+    rob, cats, df_for_pred = fit_mnlogit(df_obs)
 
-    pw: pd.DataFrame = pairwise_ame_mnlogit(
-        rob,
-        factor="method",
-        base="qual",
-        at="overall",
-        alpha=0.05,
-        mt_method="fdr_bh",
-    )
+    method_cols: List[str] = [col for col in METHOD_COLUMNS if df_obs[col].any()]
+    pw: pd.DataFrame | None = None
+    if len(method_cols) >= 2:
+        pw = pairwise_ame_multihot(
+            rob,
+            columns=method_cols,
+            at="overall",
+            alpha=0.05,
+            mt_method="fdr_bh",
+        )
 
     # 4) 出力（推定結果）
     out_dir: Path = cfg.ensure_out_dir()
@@ -110,23 +117,24 @@ def main() -> None:
     )
 
     # 4-2) AME（overall, dydx）のうち year_centered のみ（CSV）
-    dm = rob.get_margeff(at="overall", method="dydx")
-    sf_year = dm.summary_frame().xs("year_centered", level="exog")
-    sf_year.reset_index().to_csv(out_dir / "margeff_year_centered.csv", index=False, encoding="utf-8")
+    rob.get_margeff().summary_frame().to_csv(
+        out_dir / "margeff.csv", index=True, encoding="utf-8"
+    )
 
-    # 4-3) pairwise_ame_mnlogit の結果（CSV）
-    pw.to_csv(out_dir / "pairwise_ame_mnlogit.csv", index=False, encoding="utf-8")
+    if pw is not None:
+        pw.to_csv(out_dir / "pairwise_ame_mnlogit.csv", index=False, encoding="utf-8")
 
     # 4-4) コンソール出力（要約）
     print("category map:", {f"y={j}": cat for j, cat in enumerate(cats)})
     print(rob.summary().tables[0])
-    print(rob.get_margeff().summary_frame().xs("year_centered", level="exog", drop_level=False))
+    print(rob.get_margeff().summary())
 
-    for eq, df_eq in pw.groupby("eq"):
-        eq_str: str = str(eq)
-        df_eq_typed: pd.DataFrame = df_eq.drop(columns=["eq"])
-        print(f"[eq={eq_str}]")
-        print(df_eq_typed.to_string(index=False))
+    if pw is not None:
+        for eq, df_eq in pw.groupby("eq"):
+            eq_str: str = str(eq)
+            df_eq_typed: pd.DataFrame = df_eq.drop(columns=["eq"])
+            print(f"[eq={eq_str}]")
+            print(df_eq_typed.to_string(index=False))
 
 
     # # 5) 観測ごとの予測選択確率（モデルに基づく）

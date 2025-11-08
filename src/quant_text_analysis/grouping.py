@@ -2,50 +2,46 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
-import pandas as pd
-
-def period_group_year(y: Optional[int]) -> Optional[str]:
+def period_group_year(y: int) -> list[str]:
     """発行年から集計用の期間ラベルを生成する。
 
     Args:
-        y (int | None): 発行年。NaN もしくは None の場合は未分類とみなす。
+        y (int): 発行年。
 
     Returns:
-        str | None: 期間ラベル。該当しない場合は None。
-    """
-    if y is None or pd.isna(y):
-        return None
-    yi = int(y)
-    if 2014 <= yi <= 2021:
-        return "2014–2021"
-    if 2022 <= yi <= 2023:
-        return "2022–2023"
-    if 2024 <= yi <= 2025:
-        return "2024–2025"
-    return None
+        list[str]: 該当する期間ラベルを 1 要素のリストで返す。
 
-def method_group(tags: Optional[str]) -> Optional[str]:
+    Raises:
+        ValueError: 期待される期間の範囲外の年が渡された場合。
+    """
+    if 2014 <= y <= 2021:
+        return ["2014–2021"]
+    if 2022 <= y <= 2023:
+        return ["2022–2023"]
+    if 2024 <= y <= 2025:
+        return ["2024–2025"]
+
+    raise ValueError("Year out of expected range: {}".format(y))
+
+
+_METHOD_TAGS = {"qual", "quan", "review", "theoretic", "other"}
+
+
+def method_group(tags: str) -> list[str]:
     """手動タグから研究手法カテゴリを推定する。
 
     Args:
-        tags (str | None): セミコロン区切りの手法タグ文字列。
+        tags (str): セミコロン区切りの手法タグ文字列。
 
     Returns:
-        str | None: 推定されたカテゴリ。該当しない場合は None。
+        list[str]: 認識された研究手法カテゴリのリスト。
+            `_METHOD_TAGS` に含まれるトークンのみが保持され、同一文書が
+            複数のカテゴリに属する場合は複数要素を返す。
     """
-    if tags is None:
-        return None
-    s = tags.lower()
-    if "qual" in s:
-        return "qual"
-    if "quan" in s:
-        return "quan"
-    if "theoretic" in s:
-        return "theoretic"
-    if "review" in s:
-        return "review"
-    if "other" in s:
-        return "other"
-    return None
+    out: list[str] = []
+    for raw in tags.split(";"):
+        token = raw.strip()
+        if token in _METHOD_TAGS:
+            out.append(token)
+
+    return out

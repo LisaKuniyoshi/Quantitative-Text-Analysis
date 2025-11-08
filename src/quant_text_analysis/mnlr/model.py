@@ -10,12 +10,12 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from statsmodels.discrete.discrete_model import MultinomialResultsWrapper
 
+from .coding import METHOD_COLUMNS
+
 
 def fit_mnlogit(
     df_obs: pd.DataFrame,
-    base_method: str = "qual",
 ) -> Tuple[
-    MultinomialResultsWrapper,
     MultinomialResultsWrapper,
     List[str],
     pd.DataFrame,
@@ -23,38 +23,38 @@ def fit_mnlogit(
     """式インターフェースで MNLogit を推定し、クラスタロバスト推定量も取得します。
 
     Args:
-        df_obs (pd.DataFrame): ``doc_id`` ``code`` ``year`` ``method`` 列を持つ長形式データ。
-        base_method (str, optional): ``method`` の基準水準。既定は ``"qual"`` 。
+        df_obs (pd.DataFrame): ``doc_id`` ``code`` ``year`` および
+            手法ダミー列（`qual`, `quan`, `review`, `theoretic`）を持つ長形式データ。
 
     Returns:
-        Tuple[MultinomialResultsWrapper, MultinomialResultsWrapper, List[str], pd.DataFrame]:
-            クラスタロバスト結果、通常推定結果、コード名のリスト、学習に使用した
+        Tuple[MultinomialResultsWrapper, List[str], pd.DataFrame]:
+            クラスタロバスト結果、コード名のリスト、学習に使用した
             前処理済みデータフレーム。
     """
     df: pd.DataFrame = df_obs.copy()
     df["code"] = df["code"].astype("category")
-    df["method"] = df["method"].astype("category")
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
     df["year_centered"] = df["year"] - df["year"].mean()
 
     df["code_num"] = df["code"].cat.codes
 
-    mod = smf.mnlogit(
-        f"code_num ~ year_centered + C(method, Treatment('{base_method}'))", data=df
-    )
-    res: MultinomialResultsWrapper = mod.fit(
-        method="newton",
-        maxiter=200,
-        disp=False,
-    )
-    robust: MultinomialResultsWrapper = mod.fit(
-        method="newton",
-        disp=False,
+    method_cols: List[str] = [col for col in METHOD_COLUMNS if col in df.columns]
+
+    predictors: List[str] = ["year_centered", *method_cols]
+
+    if not predictors:
+        predictors = ["1"]
+
+    formula_rhs: str = " + ".join(predictors)
+    formula: str = f"code_num ~ {formula_rhs}"
+
+    mod = smf.mnlogit(formula, data=df)
+    robust = mod.fit(
         cov_type="cluster",
         cov_kwds={"groups": df["doc_id"]},
     )
     cats: List[str] = df["code"].cat.categories.tolist()
-    return robust, res, cats, df
+    return robust, cats, df
 
 
 def predict_probabilities(
@@ -66,7 +66,8 @@ def predict_probabilities(
 
     Args:
         res (MultinomialResultsWrapper): `fit_mnlogit` が返す推定結果の一つ。
-        df_pred (pd.DataFrame): 予測対象データ。``year_centered`` ``method`` などの列を含む。
+        df_pred (pd.DataFrame): 予測対象データ。``year_centered`` と
+            `method_*` ダミー列など、推定時と同じ特徴量を含む。
         cats (List[str]): 予測確率の列順に対応するコード名のリスト。
 
     Returns:
