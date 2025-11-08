@@ -154,6 +154,7 @@ python -m quant_text_analysis mnlr
   をマルチホットなダミー変数としてモデルへ投入します。
 - 文書 ID をクラスタとするロバスト共分散推定を実施
 - `pairwise_ame_mnlogit` を用いて手法カテゴリ間の平均限界効果差を多重比較補正付きで評価
+- `pairwise_ame_multihot` により複数のマルチホットダミー列間で平均限界効果のペア比較を実行
 - `t_test_pairwise_mnlogit` により係数レベルでのペアワイズ t 検定も実行可能（スクリプトから呼び出し）
 - コード定義は `config.CODE_MAP` を参照
 

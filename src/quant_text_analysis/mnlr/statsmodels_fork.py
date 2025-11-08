@@ -272,7 +272,27 @@ def pairwise_ame_multihot(
     alpha: float = 0.05,
     mt_method: str = "holm-sidak",
 ) -> pd.DataFrame:
-    """平均限界効果に基づくダミー変数間のペア比較を行います。"""
+    """平均限界効果を用いたダミー変数間のペア比較を実施する。
+
+    Args:
+        rob (MultinomialResults | MultinomialResultsWrapper):
+            ロバスト共分散を含む MNLogit 推定結果。
+        columns (Sequence[str] | None):
+            比較対象とするダミー列。``None`` の場合は利用可能な列を自動選択する。
+        at (str):
+            ``get_margeff`` に渡す評価点。既定値は ``"overall"`` 。
+        alpha (float):
+            多重比較補正後の有意水準。
+        mt_method (str):
+            多重比較補正の方式。既定値は ``"holm-sidak"`` 。
+
+    Returns:
+        pandas.DataFrame: アウトカム・列ペアごとの AME 差と検定統計量。
+
+    Raises:
+        ValueError: ペア比較可能なダミー列が 2 つ未満の場合や、AME が取得できない
+            場合。
+    """
 
     mfx: DiscreteMargins = rob.get_margeff(at=at, method="dydx")
     sf: pd.DataFrame = mfx.summary_frame()
