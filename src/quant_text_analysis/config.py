@@ -10,10 +10,15 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
     # クラスタ1
     "suppress": (
         "avoid",
+        "space",
         "suppression",
-        "suppress",
         "conscious",
         "mask",
+        "community",
+        "suppress",
+        "masking",
+        "autistic_community",
+        "neurodivergent",
         "conceal",
         "identity",
         "discrimination",
@@ -28,6 +33,7 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "autistic_identity",
         "strategy",
         "coping_strategy",
+        "conflict",
     ),
     # クラスタ4
     "achieve": (
@@ -39,12 +45,24 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
     ),
     # クラスタ11
     "engagement": (
+        "social",
         "desire",
         "day_to_day",
         "engagement",
         "interpersonal",
         "everyday",
         "connection",
+        "social_interaction",
+    ),
+    # クラスタ16
+    "intervention": (
+        "demand",
+        "goal",
+        "researcher",
+        "harm",
+        "intervention",
+        "pass",
+        "professional",
     ),
     # クラスタ18
     "gap": (
@@ -61,11 +79,19 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "boy",
         "girl",
         "bias",
+        "tend",
         "child",
         "detect"
     ),
-    "gender": ("female", "male", "gender", "woman", "man"),
-    # クラスタ8, 10
+    # クラスタ5, 22
+    "gender": (
+        "female",
+        "male",
+        "gender",
+        "woman",
+        "man",
+    ),
+    # クラスタ8, 10, 色々
     "mental health": (
         "mental_health",
         "depression",
@@ -76,15 +102,23 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "risk_factor",
         "anxiety",
         "stress",
+        "generalized_anxiety",
+        "social_anxiety",
+        "distress",
+        "depressive",
     ),
-    # クラスタ5
+    # クラスタ5, 21, 22
     "diagnosis": (
         "delay",
         "late",
         "later",
         "age",
         "diagnosis",
+        "diagnose",
         "diagnostic",
+        "identification",
+        "formal",
+        "presence",
     ),
 }
 
