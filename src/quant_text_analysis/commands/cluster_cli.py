@@ -100,14 +100,16 @@ def main() -> None:
         out_dir_dim.mkdir(parents=True, exist_ok=True)
 
         # 語埋め込み（SVD→L2 正規化）
-        Z = get_or_svd_embedding(
+        Z_raw, explained_var_ratio = get_or_svd_embedding(
             X_tf.T,
             svd_dim=d,
             cfg=s,
             ppmi_cache_key=None,
             random_state=s.random_seed,
         )
-        Z = l2_normalize_rows(Z)             # (V, z) 行 L2=1
+        cumulative_ratio = float(np.cumsum(explained_var_ratio)[-1]) if explained_var_ratio.size else float("nan")
+        print(f"Cumulative explained variance (dim={d}): {cumulative_ratio:.4f}")
+        Z = l2_normalize_rows(Z_raw)             # (V, z) 行 L2=1
 
         # k ごとにクラスタリング
         for k in s.k_list:
