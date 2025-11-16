@@ -50,6 +50,7 @@ from ..io.writers import (
     save_metrics,
     save_cluster_terms,
     save_vocab,
+    save_centroid_distances,
 )
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
@@ -137,6 +138,17 @@ def main() -> None:
             # 文書×クラスタ比率
             M = abstract_cluster_ratio(per_doc_freqs, vocab, labels)
             save_cluster_ratio(out_dir_dim, k, M)
+
+            # クラスタ重心間距離（cosine）
+            sims = np.clip(res.centroids_ @ res.centroids_.T, -1.0, 1.0)
+            distances = 1.0 - sims
+            np.fill_diagonal(distances, 0.0)
+            save_centroid_distances(out_dir_dim, k, distances)
+            dist_repr = np.array2string(
+                distances,
+                formatter={"float": lambda x: f"{x:.4f}"},
+            )
+            print(f"Centroid cosine distances (k={k}):\n{dist_repr}")
 
     metrics_csv_path = out_dir / "metrics.csv"
     with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:

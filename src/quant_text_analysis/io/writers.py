@@ -118,3 +118,15 @@ def save_cluster_ratio(out_dir: Path, k: int, M: np.ndarray) -> Path:
     path = out_dir / f"abstract_ratio_k{k}.npy"
     np.save(path, M)
     return path
+
+def save_centroid_distances(out_dir: Path, k: int, distances: np.ndarray) -> Path:
+    """クラスタ重心間の距離行列を CSV 形式で保存する。"""
+
+    df = pd.DataFrame(
+        distances.astype(float),
+        index=[f"cluster_{i}" for i in range(k)],
+        columns=[f"cluster_{i}" for i in range(k)],
+    )
+    path = out_dir / f"centroid_cosine_distances_k{k}.csv"
+    df.to_csv(path, encoding="utf-8")
+    return path
