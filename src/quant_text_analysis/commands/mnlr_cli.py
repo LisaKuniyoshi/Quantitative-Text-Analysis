@@ -99,35 +99,63 @@ def main() -> None:
 
     method_cols: List[str] = [col for col in METHOD_COLUMNS if df_obs[col].any()]
     pw: pd.DataFrame | None = None
-    if len(method_cols) >= 2:
-        pw = pairwise_ame_multihot(
-            rob,
-            columns=method_cols,
-            at="overall",
-            alpha=0.05,
-            mt_method="fdr_bh",
-        )
+    # if len(method_cols) >= 2:
+    #     pw = pairwise_ame_multihot(
+    #         rob,
+    #         columns=method_cols,
+    #         at="overall",
+    #         alpha=0.05,
+    #         mt_method="fdr_bh",
+    #     )
 
     # 4) 出力（推定結果）
     out_dir: Path = cfg.ensure_out_dir()
 
+    category_map: Dict[str, str] = {f"code_num={j}": cat for j, cat in enumerate(cats)}
+
     # 4-1) rob のサマリ全文（テキスト）
     (out_dir / "mnlogit_summary.txt").write_text(
-        rob.summary().as_text(), encoding="utf-8"
+        rob.summary().as_text(), encoding="Shift_JIS"
     )
 
-    # 4-2) AME（overall, dydx）のうち year_centered のみ（CSV）
-    rob.get_margeff().summary_frame().to_csv(
-        out_dir / "margeff.csv", index=True, encoding="utf-8"
+    def _map_category(value: Any) -> Any:
+        if value in category_map:
+            return category_map[value]
+        value_str = str(value)
+        return category_map.get(value_str, value)
+
+    # 4-2) AME（overall, dydx）（CSV）
+    margeff = rob.get_margeff()
+    margeff_frame = margeff.summary_frame()
+
+    object_columns = margeff_frame.select_dtypes(include="object").columns
+    for column_name in object_columns:
+        margeff_frame[column_name] = margeff_frame[column_name].apply(_map_category)
+
+    new_index = [
+        tuple(_map_category(part) for part in idx_tuple)
+        for idx_tuple in margeff_frame.index.tolist()
+    ]
+    margeff_frame.index = pd.MultiIndex.from_tuples(
+        new_index, names=margeff_frame.index.names
     )
+
+    margeff_frame.to_csv(out_dir / "margeff.csv", index=True, encoding="Shift_JIS")
 
     if pw is not None:
-        pw.to_csv(out_dir / "pairwise_ame_mnlogit.csv", index=False, encoding="utf-8")
+        pw.to_csv(out_dir / "pairwise_ame_mnlogit.csv", index=False, encoding="Shift_JIS")
 
     # 4-4) コンソール出力（要約）
-    print("category map:", {f"y={j}": cat for j, cat in enumerate(cats)})
     print(rob.summary().tables[0])
-    print(rob.get_margeff().summary())
+    marg_summary = margeff.summary()
+    if hasattr(marg_summary, "as_text"):
+        summary_text: str = marg_summary.as_text()
+        for code, label in category_map.items():
+            summary_text = summary_text.replace(code, label)
+        print(summary_text)
+    else:
+        # Fallback: SimpleTable未対応の場合は素の出力を表示
+        print(marg_summary)
 
     if pw is not None:
         for eq, df_eq in pw.groupby("eq"):
