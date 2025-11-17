@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 CSV_PATH = r"C:\Users\Lisa\Documents\大学\卒論\Quantitative-Text-Analysis\outputs\save\20251116_191033_cluster\svd_dim_25\centroid_cosine_distances_k23.csv"
 SIMILARITY_THRESHOLD = 0.5
 OUTPUT_PATH = r"C:\Users\Lisa\Documents\大学\卒論\Quantitative-Text-Analysis\outputs\save\20251116_191033_cluster\svd_dim_25\cluster_network_selected_bw.png"
-FIGSIZE = (5, 5)
+FIGSIZE = (10, 10)
 
 # フォント設定（環境に合わせて "Yu Mincho" / "游明朝" / "MS Mincho" などに変更）
 FONT_FAMILY = "Yu Mincho"   # or "游明朝"
@@ -21,20 +21,28 @@ plt.rcParams["font.size"] = BASE_FONTSIZE
 
 SELECTED_CLUSTERS = [
     "cluster_1", "cluster_2", "cluster_4", "cluster_5",
-    "cluster_8", "cluster_10", "cluster_11", "cluster_18",
+    "cluster_10", "cluster_11", "cluster_18",
     "cluster_19", "cluster_21", "cluster_22",
 ]
 
 nickname_map = {
     "cluster_1": "抑圧",
-    "cluster_2": "戦略",
+    "cluster_2": "代替戦略",
+    "cluster_3": "（質的理解）",
     "cluster_4": "手段",
     "cluster_5": "女性の見逃し",
-    "cluster_8": "自殺リスク",
+    "cluster_6": "（メンタルヘルス）",
+    "cluster_7": "???",
+    "cluster_8": "（自殺リスク）",
     "cluster_10": "疲弊",
     "cluster_11": "社会的欲求",
-    "cluster_18": "認知-行動ギャップ",
+    "cluster_12": "（レビュー）",
+    "cluster_15": "（social motivation）",
+    "cluster_16": "（介入目標）",
+    "cluster_17": "（dynamic psyc）",
+    "cluster_18": "ギャップ",
     "cluster_19": "子供の性差",
+    "cluster_20": "（validate retest）",
     "cluster_21": "診断時期",
     "cluster_22": "正式診断",
 }
@@ -68,14 +76,14 @@ def build_graph_from_distance_matrix(df_dist, threshold=0.3, selected=None):
     return G
 
 
-def draw_graph(G, output_path, title=None):
+def draw_graph(G, output_path, seed=None):
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D  # 凡例用
 
     plt.figure(figsize=FIGSIZE)
 
     # spring_layoutで少しゆとりを持たせる（k は広がり具合）
-    pos = nx.spring_layout(G, weight="weight", k=5.0, iterations=300, seed=6)
+    pos = nx.spring_layout(G, weight="weight", k=5.0, iterations=300, seed=seed)
 
     # ノード：ごく薄い灰色に黒枠
     nx.draw_networkx_nodes(
@@ -157,9 +165,6 @@ def draw_graph(G, output_path, title=None):
         ),
     )
 
-    if title:
-        plt.title(title, fontsize=BASE_FONTSIZE)
-
     # 凡例を配置（位置は必要に応じて変更: upper right / lower left など）
     if legend_handles is not None:
         plt.legend(
@@ -174,8 +179,8 @@ def draw_graph(G, output_path, title=None):
     plt.axis("off")
     plt.tight_layout()
     plt.savefig(output_path, dpi=600, bbox_inches="tight")
+    plt.show()
     plt.close()
-    # plt.show()
 
 def main():
     df_dist = pd.read_csv(CSV_PATH, index_col=0)
@@ -185,8 +190,9 @@ def main():
         threshold=SIMILARITY_THRESHOLD,
         selected=SELECTED_CLUSTERS,
     )
-
-    draw_graph(G, OUTPUT_PATH)
+    for seed in [67]:
+        print(f"seed = {seed}")
+        draw_graph(G, seed=seed, output_path=OUTPUT_PATH)
 
 
 if __name__ == "__main__":
