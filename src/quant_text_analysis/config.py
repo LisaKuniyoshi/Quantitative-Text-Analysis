@@ -7,8 +7,8 @@ from typing import Tuple
 from .data_types import Columns, TokenPolicy
 
 CODE_MAP: dict[str, tuple[str, ...]] = {
-    # クラスタ1
-    "suppress": (
+    # クラスタ1【抑圧】
+    "【抑圧】": (
         "avoid",
         "space",
         "suppression",
@@ -20,13 +20,17 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "autistic_community",
         "neurodivergent",
         "conceal",
+        "society",
         "identity",
         "discrimination",
-        "priviledge",
+        "blend",
+        "world",
+        "socially",
+        "privilege",
         "majority",
     ),
-    # クラスタ2
-    "survive": (
+    # クラスタ2【代替戦略】
+    "【代替戦略】": (
         "stigma",
         "navigate",
         "complexity",
@@ -35,90 +39,90 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
         "coping_strategy",
         "conflict",
     ),
-    # クラスタ4
-    "achieve": (
+    # クラスタ4【手段】
+    "【手段】": (
         "manage",
         "maintain",
         "social_relationship",
         "achieve",
         "opportunity",
     ),
-    # クラスタ11
-    "engagement": (
+    # クラスタ11【社会的欲求】
+    "【社会的欲求】": (
         "social",
         "desire",
         "day_to_day",
         "engagement",
         "interpersonal",
         "everyday",
+        "authentic",
         "connection",
+        "survive",
         "social_interaction",
     ),
-    # クラスタ16
-    "intervention": (
-        "demand",
-        "goal",
-        "researcher",
-        "harm",
-        "intervention",
-        "pass",
-        "professional",
-    ),
-    # クラスタ18
-    "gap": (
+    # クラスタ18【ギャップ】
+    "【ギャップ】": (
         "compensatory",
         "cognitive",
         "deficit",
         "underlie",
         "behavioral",
+        "mechanism",
         "compensation",
+        "process",
         "phenotype",
+        "improve",
+        "observe",
     ),
-    # クラスタ19
-    "child": (
+    # クラスタ19【子供の性差】
+    "【子供の性差】": (
         "boy",
         "girl",
         "bias",
         "tend",
         "child",
-        "detect"
+        "detect",
+        "peer",
+        "enable",
+        "school",
+        "ability",
     ),
-    # クラスタ5, 22
-    "gender": (
-        "female",
-        "male",
-        "gender",
-        "woman",
-        "man",
-    ),
-    # クラスタ8, 10, 色々
-    "mental health": (
-        "mental_health",
-        "depression",
-        "suicidality",
-        "risk",
+    # クラスタ10【疲弊】
+    "【疲弊】": (
         "burnout",
+        "risk_factor"
         "exhaustion",
-        "risk_factor",
-        "anxiety",
+        "depression",
+        "mionority_stress",
         "stress",
-        "generalized_anxiety",
-        "social_anxiety",
-        "distress",
-        "depressive",
+        "minority",
     ),
-    # クラスタ5, 21, 22
-    "diagnosis": (
+    # クラスタ5【女性の見逃し】
+    "【女性の見逃し】": (
+        "skill",
+        "recognition",
         "delay",
-        "late",
-        "later",
-        "age",
-        "diagnosis",
-        "diagnose",
+        "gender",
+        "male",
+        "female",
+    ),
+    # クラスタ21【診断時期】
+    "【診断時期】": (
         "diagnostic",
+        "diagnosis",
+        "age",
+        "later",
+        "late",
+    ),
+    # クラスタ22【正式診断】
+    "【正式診断】": (
         "identification",
         "formal",
         "presence",
+        "woman",
+        "man",
+        "attention",
+        "symptom_severity",
     ),
 }
 
