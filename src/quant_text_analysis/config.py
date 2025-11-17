@@ -6,7 +6,7 @@ from typing import Tuple
 
 from .data_types import Columns, TokenPolicy
 
-CODE_MAP: dict[str, tuple[str, ...]] = {
+CODE_MAP_CLUSTER: dict[str, tuple[str, ...]] = {
     # クラスタ1【抑圧】
     "【抑圧】": (
         "avoid",
@@ -126,6 +126,27 @@ CODE_MAP: dict[str, tuple[str, ...]] = {
     ),
 }
 
+CODE_MAP_GENDER: dict[str, tuple[str, ...]] = {
+    # 女性
+    "【女性】": (
+        "female",
+        "woman",
+        "girl",
+    ),
+    # 男性
+    "【男性】": (
+        "male",
+        "man",
+        "boy",
+    ),
+    "【性別】": (
+        "gender",
+        "sex",
+        "sex_at_birth",
+        "sex_assigned_at_birth",
+        "sex_disignated_at_birth",
+    ),
+}
 
 MNLR_EXCLUDE_METHODS: tuple[str, ...] = ("other",)
 

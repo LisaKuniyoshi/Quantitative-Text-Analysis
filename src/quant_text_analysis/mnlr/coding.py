@@ -7,6 +7,7 @@ from typing import Dict, List, Sequence, Tuple
 import pandas as pd
 
 METHOD_COLUMNS: tuple[str, ...] = ("qual", "quan", "review", "theoretic")
+NO_CODE_LABEL: str = "no_code"
 
 def invert_code_map(code_map: Dict[str, Tuple[str, ...]]) -> Dict[str, str]:
     """最初に一致したトークンに対応するコードへの逆引きインデックスを作成して返す。
@@ -58,8 +59,9 @@ def rows_from_tokens(
 ) -> pd.DataFrame:
     """文書ごとのトークン列を観測単位の行に展開し、マルチホット手法ダミーを付与する。
 
-    各トークンが `code_index` に存在する都度、1 行（`doc_id`, `code`, `year`）を生成し、
-    併せて手法カテゴリのダミー列（`qual`, `quan`, `review`, `theoretic`）を付与する。
+    各トークンについて、`code_index` に対応するコードがあればそのコードを、無ければ
+    `no_code` ラベルを付与した 1 行（`doc_id`, `code`, `year`）を生成する。併せて手法
+    カテゴリのダミー列（`qual`, `quan`, `review`, `theoretic`）を付与する。
 
     Args:
         per_doc_tokens (Sequence[Sequence[str]]): 文書ごとのトークン列。
@@ -88,9 +90,7 @@ def rows_from_tokens(
                 method_flags[name] = 1
 
         for tok in toks:
-            code = code_index.get(tok)
-            if code is None:
-                continue
+            code = code_index.get(tok, NO_CODE_LABEL)
             row = {
                 "doc_id": doc_id,
                 "code": code,
@@ -101,3 +101,22 @@ def rows_from_tokens(
 
     columns: List[str] = ["doc_id", "code", "year", *METHOD_COLUMNS]
     return pd.DataFrame(rows, columns=columns)
+
+
+def build_observation_frame(
+    per_doc_tokens: Sequence[Sequence[str]],
+    years: pd.Series,
+    methods: pd.Series,
+    code_index: Dict[str, str],
+) -> pd.DataFrame:
+    """長形式のMNLogit用データフレームを構築して返す。
+
+    戻り値には `code="no_code"` 行も含まれる。
+    """
+
+    df_obs: pd.DataFrame = rows_from_tokens(per_doc_tokens, years, methods, code_index)
+    if df_obs.empty:
+        raise RuntimeError(
+            "コーディング後の観測が0件です。code_indexの内容を確認してください。"
+        )
+    return df_obs

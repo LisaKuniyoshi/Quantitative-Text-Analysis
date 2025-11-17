@@ -59,7 +59,7 @@ class Settings:
     svd_dim_list: Tuple[int, ...] = (25,)
 
     # クラスタリング
-    k_list: Tuple[int, ...] = tuple(range(1, 40))
+    k_list: Tuple[int, ...] = (23,)
     n_init: int = 20
     max_iter: int = 300
     random_seed: int = 42
