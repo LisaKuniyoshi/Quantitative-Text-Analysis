@@ -16,7 +16,11 @@ from .model import (
     fit_mnlogit,
     predict_probabilities,
 )
-from .plotting import plot_prob_by_year_with_method
+from .plotting import (
+    plot_method_odds_ratios,
+    plot_prob_by_year_with_method,
+    plot_year_odds_ratios,
+)
 from .tables import build_code_method_crosstab
 
 __all__ = [
@@ -29,7 +33,9 @@ __all__ = [
     "fit_binary_logit_for_code",
     "fit_binary_logit_for_codes",
     "fit_mnlogit",
+    "plot_method_odds_ratios",
     "plot_prob_by_year_with_method",
+    "plot_year_odds_ratios",
     "predict_probabilities",
     "rows_from_tokens",
 ]

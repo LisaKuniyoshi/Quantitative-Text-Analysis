@@ -23,8 +23,11 @@ from quant_text_analysis.mnlr import (
     fit_binary_logit,
     fit_binary_logit_for_codes,
     invert_code_map,
+    plot_method_odds_ratios,
+    plot_year_odds_ratios,
 )
 from quant_text_analysis.mnlr.model import fit_binary_logit_for_code
+from quant_text_analysis.mnlr.coding import METHOD_COLUMNS
 from quant_text_analysis.preprocess.nlp_backend import SpacyBackend
 from quant_text_analysis.preprocess.normalize import build_normalizer
 from quant_text_analysis.preprocess.perdoc import analyze_docs_with_cache
@@ -164,6 +167,16 @@ def run_cluster_analysis(
     if combined_results:
         merged = pd.concat(combined_results, ignore_index=True)
         merged.to_csv(out_dir / "margeff.csv", index=False, encoding="Shift_JIS")
+
+        method_subset = merged[merged["exog"].isin(METHOD_COLUMNS)].copy()
+        plot_method_odds_ratios(
+            method_subset,
+            METHOD_COLUMNS,
+            out_dir / "odds_ratio_methods.png",
+        )
+
+        year_subset = merged[merged["exog"] == "year_centered"].copy()
+        plot_year_odds_ratios(year_subset, out_dir / "odds_ratio_year.png")
     else:
         empty_cols: List[str] = [
             "endog",

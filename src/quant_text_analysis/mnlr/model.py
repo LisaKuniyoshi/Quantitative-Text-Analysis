@@ -16,6 +16,13 @@ from statsmodels.discrete.discrete_model import (
 from .coding import METHOD_COLUMNS
 
 
+def _has_variation(series: pd.Series) -> bool:
+    """Return True if the series contains more than one distinct non-null value."""
+
+    non_null = series.dropna()
+    return non_null.nunique() > 1
+
+
 def fit_mnlogit(
     df_obs: pd.DataFrame,
 ) -> Tuple[
@@ -41,9 +48,16 @@ def fit_mnlogit(
 
     df["code_num"] = df["code"].cat.codes
 
-    method_cols: List[str] = [col for col in METHOD_COLUMNS if col in df.columns]
+    method_cols: List[str] = [
+        col
+        for col in METHOD_COLUMNS
+        if col in df.columns and _has_variation(df[col])
+    ]
 
-    predictors: List[str] = ["year_centered", *method_cols]
+    predictors: List[str] = []
+    if "year_centered" in df.columns and _has_variation(df["year_centered"]):
+        predictors.append("year_centered")
+    predictors.extend(method_cols)
 
     if not predictors:
         predictors = ["1"]
@@ -72,8 +86,16 @@ def _fit_binary_logit_common(
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
     df["year_centered"] = df["year"] - df["year"].mean()
 
-    method_cols: List[str] = [col for col in METHOD_COLUMNS if col in df.columns]
-    predictors: List[str] = ["year_centered", *method_cols] if method_cols else ["year_centered"]
+    method_cols: List[str] = [
+        col
+        for col in METHOD_COLUMNS
+        if col in df.columns and _has_variation(df[col])
+    ]
+
+    predictors: List[str] = []
+    if "year_centered" in df.columns and _has_variation(df["year_centered"]):
+        predictors.append("year_centered")
+    predictors.extend(method_cols)
 
     formula_rhs = " + ".join(predictors) if predictors else "1"
     formula: str = f"{target_column} ~ {formula_rhs}"

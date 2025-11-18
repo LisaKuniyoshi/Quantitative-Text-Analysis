@@ -29,7 +29,11 @@ import pandas as pd
 
 from ..settings import Settings
 from ..io.loader import load_df
-from ..grouping import period_group_year, method_group
+from ..grouping import (
+    METHOD_CODE_TO_LABEL,
+    period_group_year,
+    method_group,
+)
 from ..preprocess.nlp_backend import SpacyBackend
 from ..preprocess.normalize import build_normalizer
 from ..features.frequency import frequency_rankings
@@ -63,13 +67,19 @@ def main() -> None:
     period = frequency_rankings(per_doc_freqs, df["period"].tolist())
     method = frequency_rankings(per_doc_freqs, df["method"].tolist())
 
+    method_label_map = {
+        code: METHOD_CODE_TO_LABEL.get(code, code)
+        for code in method.keys()
+    }
+
     print(f"\n=== Overall (All documents) | Top {len(overall['ALL'])} ===")
     print(overall["ALL"].to_string(index=False))
     for g, dfr in period.items():
         print(f"\n=== Period: {g} | Top {len(dfr)} ===")
         print(dfr.to_string(index=False))
     for g, dfr in method.items():
-        print(f"\n=== Method: {g} | Top {len(dfr)} ===")
+        label = method_label_map.get(g, g)
+        print(f"\n=== Method: {label} | Top {len(dfr)} ===")
         print(dfr.to_string(index=False))
 
     if s.out_dir is not None:
@@ -94,7 +104,10 @@ def main() -> None:
             return pd.concat(pieces, axis=1)
 
         period_df = _concat_side_by_side(period)
-        method_df = _concat_side_by_side(method)
+        method_df = _concat_side_by_side({
+            method_label_map.get(name, name): frame
+            for name, frame in method.items()
+        })
         period_df.to_csv(s.out_dir / "top_words_periods.csv", index=False)
         method_df.to_csv(s.out_dir / "top_words_methods.csv", index=False)
 

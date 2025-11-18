@@ -19,7 +19,7 @@ from __future__ import annotations
 import pandas as pd
 
 from quant_text_analysis.settings import Settings
-from quant_text_analysis.grouping import method_group
+from quant_text_analysis.grouping import method_group, method_label_string
 from quant_text_analysis.io.loader import load_df
 from quant_text_analysis.preprocess.nlp_backend import SpacyBackend
 from quant_text_analysis.preprocess.normalize import build_normalizer
@@ -31,7 +31,7 @@ from quant_text_analysis.mnlr import (
 )
 
 # 既存のコーディング規則を再利用
-from ..config import CODE_MAP
+from ..config import CODE_MAP_CLUSTER
 
 
 def main() -> None:
@@ -52,18 +52,18 @@ def main() -> None:
     )
 
     # (3) 文書ごとのコード出現（有無）
-    code_index = invert_code_map(CODE_MAP)
+    code_index = invert_code_map(CODE_MAP_CLUSTER)
     per_doc_codes = codes_per_doc(per_doc_tokens, code_index)
 
-    # 手法カテゴリ（欠損は "other"）
-    method = df["manual_tags"].apply(method_group).fillna("other").astype(str)
-
+    # 手法カテゴリを日本語ラベルへ変換（該当なしは「その他」扱い）
+    method_codes = df["manual_tags"].apply(method_group)
+    method = method_codes.apply(method_label_string)
     # 文書単位のクロス集計（出現文書数）
     # 行=コード、列=手法、値=その手法の文書数のうちコードが出た文書数
     ctab = build_code_method_crosstab(
         per_doc_codes,
         method,
-        code_order=sorted(CODE_MAP.keys()),
+        code_order=sorted(CODE_MAP_CLUSTER.keys()),
     )
 
     # (4) 出力

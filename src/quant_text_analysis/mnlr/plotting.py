@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+import itertools
+from pathlib import Path
+from typing import Iterable
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+from quant_text_analysis.grouping import METHOD_CODE_TO_LABEL
+
+FONT_FAMILY = "Yu Mincho"   # or "游明朝"
+
+plt.rcParams["font.family"] = FONT_FAMILY
 
 def qfitci_like(ax, x: pd.Series, y: pd.Series, label: str) -> None:
     """Stata の `qfitci` 風に、2次曲線による近似と 95% 信頼区間を描く。
@@ -92,3 +101,176 @@ def plot_prob_by_year_with_method(
         fig.tight_layout()
         fig.savefig(out_dir / f"prob_by_year_{code}.png")
         plt.close(fig)
+
+
+def _compute_log_symmetric_axis_limits(values: Iterable[float]) -> tuple[float, float]:
+    arr = np.fromiter((v for v in values if np.isfinite(v) and v > 0), dtype=float)
+    if arr.size == 0:
+        return 0.5, 2.0
+
+    log_vals = np.log(arr)
+    if log_vals.size == 0 or not np.isfinite(log_vals).any():
+        return 0.5, 2.0
+
+    max_abs = float(np.max(np.abs(log_vals)))
+    if not np.isfinite(max_abs) or max_abs <= 0.0:
+        max_abs = 0.25
+    else:
+        max_abs *= 1.2
+
+    axis_min = float(np.exp(-max_abs))
+    axis_max = float(np.exp(max_abs))
+    axis_min = max(axis_min, 1e-4)
+    axis_max = max(axis_max, axis_min * 1.5)
+    return axis_min, axis_max
+
+
+def plot_method_odds_ratios(
+    odds_df: pd.DataFrame,
+    method_order: Iterable[str],
+    out_path: Path,
+) -> None:
+    """Plot odds ratios for method dummies per code as grayscale facets."""
+
+    method_order = list(method_order)
+    if odds_df.empty or not method_order:
+        return
+
+    odds_df = odds_df.copy()
+    for column in ("coef", "0.025", "0.975"):
+        odds_df[column] = pd.to_numeric(odds_df[column], errors="coerce")
+
+    odds_df = odds_df.dropna(subset=["coef", "0.025", "0.975"])
+    if odds_df.empty:
+        return
+
+    method_set = set(method_order)
+    odds_df = odds_df[odds_df["exog"].isin(method_set)]
+    if odds_df.empty:
+        return
+
+    order_map = {name: idx for idx, name in enumerate(method_order)}
+    odds_df["method_rank"] = odds_df["exog"].map(order_map)
+    odds_df = odds_df.dropna(subset=["method_rank"])
+    if odds_df.empty:
+        return
+
+    axis_min, axis_max = _compute_log_symmetric_axis_limits(
+        itertools.chain(odds_df["coef"], odds_df["0.025"], odds_df["0.975"])
+    )
+
+    codes = sorted(odds_df["endog"].unique())
+    n_codes = len(codes)
+    ncols = 2 if n_codes > 1 else 1
+    nrows = int(np.ceil(n_codes / ncols))
+
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(6 * ncols, 3 * nrows),
+        sharex=True,
+        dpi=120,
+    )
+
+    axes = np.atleast_1d(axes).flatten()
+    method_labels = {m: METHOD_CODE_TO_LABEL.get(m, m) for m in method_order}
+
+    for ax, code in itertools.zip_longest(axes, codes):
+        if code is None:
+            ax.axis("off")
+            continue
+
+        data = odds_df[odds_df["endog"] == code].copy()
+        data = data.sort_values("method_rank")
+        if data.empty:
+            ax.axis("off")
+            continue
+
+        positions = np.arange(len(data))
+        errors = np.vstack(
+            [data["coef"] - data["0.025"], data["0.975"] - data["coef"]]
+        )
+
+        ax.set_xscale("log")
+
+        ax.errorbar(
+            data["coef"],
+            positions,
+            xerr=errors,
+            fmt="o",
+            color="black",
+            ecolor="dimgray",
+            elinewidth=1.0,
+            capsize=3.0,
+        )
+        ax.axvline(1.0, color="black", linestyle="--", linewidth=1.0)
+        ax.set_xlim(axis_min, axis_max)
+        ax.set_yticks(positions)
+        ax.set_yticklabels([method_labels.get(m, m) for m in data["exog"]])
+        ax.invert_yaxis()
+        ax.grid(axis="x", color="lightgray", linestyle=":", linewidth=0.5, which="both")
+        ax.set_title(str(code))
+
+    for idx, ax in enumerate(axes):
+        if idx // ncols == nrows - 1:
+            ax.set_xlabel("Odds Ratio")
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
+
+
+def plot_year_odds_ratios(
+    odds_df: pd.DataFrame,
+    out_path: Path,
+) -> None:
+    """Plot odds ratios for the year effect across codes as a single panel."""
+
+    if odds_df.empty:
+        return
+
+    odds_df = odds_df.copy()
+    for column in ("coef", "0.025", "0.975"):
+        odds_df[column] = pd.to_numeric(odds_df[column], errors="coerce")
+
+    odds_df = odds_df.dropna(subset=["coef", "0.025", "0.975"])
+    if odds_df.empty:
+        return
+
+    odds_df = odds_df.sort_values("coef", ascending=False)
+
+    axis_min, axis_max = _compute_log_symmetric_axis_limits(
+        itertools.chain(odds_df["coef"], odds_df["0.025"], odds_df["0.975"])
+    )
+
+    positions = np.arange(len(odds_df))
+
+    fig, ax = plt.subplots(figsize=(7, 6), dpi=120)
+    errors = np.vstack(
+        [odds_df["coef"] - odds_df["0.025"], odds_df["0.975"] - odds_df["coef"]]
+    )
+
+    ax.set_xscale("log")
+
+    ax.errorbar(
+        odds_df["coef"],
+        positions,
+        xerr=errors,
+        fmt="o",
+        color="black",
+        ecolor="dimgray",
+        elinewidth=1.0,
+        capsize=3.0,
+    )
+    ax.axvline(1.0, color="black", linestyle="--", linewidth=1.0)
+    ax.set_xlim(axis_min, axis_max)
+    ax.set_yticks(positions)
+    ax.set_yticklabels(list(odds_df["endog"]))
+    ax.invert_yaxis()
+    ax.grid(axis="x", color="lightgray", linestyle=":", linewidth=0.5, which="both")
+    ax.set_xlabel("Odds Ratio")
+    ax.set_title("Effect of Year (Odds Ratio per 1-year increase)")
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)

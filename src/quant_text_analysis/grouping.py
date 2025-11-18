@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Iterable, Sequence
+
+
 def period_group_year(y: int) -> list[str]:
     """発行年から集計用の期間ラベルを生成する。
 
@@ -24,24 +27,66 @@ def period_group_year(y: int) -> list[str]:
     raise ValueError("Year out of expected range: {}".format(y))
 
 
-_METHOD_TAGS = {"qual", "quan", "review", "theoretic", "other"}
+METHOD_CODE_TO_LABEL: dict[str, str] = {
+    "qual": "質的研究",
+    "quan": "量的研究",
+    "review": "レビュー",
+    "theoretic": "理論的研究",
+    "other": "その他",
+}
+
+_METHOD_TAGS = frozenset(METHOD_CODE_TO_LABEL.keys())
+_DEFAULT_METHOD_LABEL = METHOD_CODE_TO_LABEL["other"]
 
 
-def method_group(tags: str) -> list[str]:
-    """手動タグから研究手法カテゴリを推定する。
+def method_group(tags: str | None) -> list[str]:
+    """手動タグから研究手法カテゴリを推定する。"""
 
-    Args:
-        tags (str): セミコロン区切りの手法タグ文字列。
+    if not isinstance(tags, str):
+        return []
 
-    Returns:
-        list[str]: 認識された研究手法カテゴリのリスト。
-            `_METHOD_TAGS` に含まれるトークンのみが保持され、同一文書が
-            複数のカテゴリに属する場合は複数要素を返す。
-    """
     out: list[str] = []
     for raw in tags.split(";"):
         token = raw.strip()
         if token in _METHOD_TAGS:
             out.append(token)
 
+    return out
+
+
+def method_labels_for_display(method_codes: Sequence[str]) -> list[str]:
+    """Convert method code tokens into human-friendly labels."""
+
+    labels: list[str] = []
+    seen: set[str] = set()
+    for code in method_codes:
+        label = METHOD_CODE_TO_LABEL.get(code, code)
+        if label in seen:
+            continue
+        labels.append(label)
+        seen.add(label)
+    return labels
+
+
+def method_label_string(method_codes: Sequence[str] | None) -> str:
+    """Return a single string label for display, defaulting to その他 when empty."""
+
+    if not method_codes:
+        return _DEFAULT_METHOD_LABEL
+
+    labels = method_labels_for_display(method_codes)
+    if not labels:
+        return _DEFAULT_METHOD_LABEL
+    return "・".join(labels)
+
+
+def method_codes_from_labels(labels: Iterable[str]) -> list[str]:
+    """Best-effort reverse lookup from labels back to method codes."""
+
+    inverse = {label: code for code, label in METHOD_CODE_TO_LABEL.items()}
+    out: list[str] = []
+    for label in labels:
+        code = inverse.get(label, label)
+        if code in _METHOD_TAGS:
+            out.append(code)
     return out
