@@ -119,6 +119,24 @@ def fit_binary_logit_for_codes(
     return _fit_binary_logit_common(df, target_column)
 
 
+def fit_binary_logit_for_code(
+    df_obs: pd.DataFrame,
+    *,
+    code_label: str,
+    target_column: str = "code_flag",
+) -> Tuple[BinaryResultsWrapper, pd.DataFrame]:
+    """単一のコードに対する二項ロジットを推定する。"""
+
+    df: pd.DataFrame = df_obs.copy()
+    df[target_column] = (df["code"] == code_label).astype(int)
+    if df[target_column].nunique() < 2:
+        raise RuntimeError(
+            "二項ロジットの目的変数に1種類の値しかありません。"
+        )
+
+    return _fit_binary_logit_common(df, target_column)
+
+
 def predict_probabilities(
     res: MultinomialResultsWrapper,
     df_pred: pd.DataFrame,

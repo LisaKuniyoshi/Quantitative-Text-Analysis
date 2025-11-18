@@ -11,6 +11,7 @@ from .coding import (
 )
 from .model import (
     fit_binary_logit,
+    fit_binary_logit_for_code,
     fit_binary_logit_for_codes,
     fit_mnlogit,
     predict_probabilities,
@@ -25,6 +26,7 @@ __all__ = [
     "invert_code_map",
     "NO_CODE_LABEL",
     "fit_binary_logit",
+    "fit_binary_logit_for_code",
     "fit_binary_logit_for_codes",
     "fit_mnlogit",
     "plot_prob_by_year_with_method",
