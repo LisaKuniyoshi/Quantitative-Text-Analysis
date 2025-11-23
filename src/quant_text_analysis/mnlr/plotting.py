@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.discrete.discrete_model import BinaryResultsWrapper
+from matplotlib.ticker import FuncFormatter
 
 from quant_text_analysis.grouping import METHOD_CODE_TO_LABEL
 from .coding import METHOD_COLUMNS
@@ -127,6 +128,21 @@ def _compute_log_symmetric_axis_limits(values: Iterable[float]) -> tuple[float, 
     return axis_min, axis_max
 
 
+def _build_log_ticks(axis_min: float, axis_max: float) -> list[float]:
+    if not np.isfinite(axis_min) or not np.isfinite(axis_max):
+        return []
+
+    ticks: set[float] = set()
+    for exponent in range(-6, 7):
+        for multiplier in (1.0, 2.0, 5.0):
+            tick = multiplier * (10 ** exponent)
+            if axis_min <= tick <= axis_max:
+                ticks.add(tick)
+
+    ordered = sorted(ticks)
+    return ordered
+
+
 def plot_method_odds_ratios(
     odds_df: pd.DataFrame,
     method_order: Iterable[str],
@@ -207,6 +223,14 @@ def plot_method_odds_ratios(
         )
         ax.axvline(1.0, color="black", linestyle="--", linewidth=1.0)
         ax.set_xlim(axis_min, axis_max)
+
+        tick_values = _build_log_ticks(axis_min, axis_max)
+        if tick_values:
+            ax.set_xticks(tick_values)
+            ax.xaxis.set_major_formatter(
+                FuncFormatter(lambda val, _: f"{val:g}")
+            )
+
         ax.set_yticks(positions)
         ax.set_yticklabels([method_labels.get(m, m) for m in data["exog"]])
         ax.invert_yaxis()
@@ -266,6 +290,11 @@ def plot_year_odds_ratios(
     )
     ax.axvline(1.0, color="black", linestyle="--", linewidth=1.0)
     ax.set_xlim(axis_min, axis_max)
+
+    tick_values = _build_log_ticks(axis_min, axis_max)
+    if tick_values:
+        ax.set_xticks(tick_values)
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda val, _: f"{val:g}"))
     ax.set_yticks(positions)
     ax.set_yticklabels(list(odds_df["endog"]))
     ax.invert_yaxis()
@@ -284,6 +313,7 @@ def plot_binary_year_effect_prediction(
     out_path: Path,
     *,
     ylabel: str = "Predicted probability",
+    y_limits: tuple[float, float] | None = None,
     # title: str = "Year effect (method dummies = 0)",
     n_points: int = 200,
 ) -> None:
@@ -350,7 +380,8 @@ def plot_binary_year_effect_prediction(
     ax.set_ylabel(ylabel)
     # ax.set_title(title)
 
-    ax.set_ylim(0.0, 0.2)
+    ymin, ymax = y_limits if y_limits is not None else (0.0, 0.2)
+    ax.set_ylim(float(ymin), float(ymax))
     ax.grid(color="lightgray", linestyle=":", linewidth=0.5)
     ax.legend(frameon=False, loc="best")
     # ax.text(

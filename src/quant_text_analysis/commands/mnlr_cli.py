@@ -312,7 +312,7 @@ def run_gender_analysis(
             "female_vs_male logit用の文書が理論的研究除外後に残っていません。"
         )
 
-    fem_res, _ = fit_binary_logit_for_codes(
+    fem_res, df_fem_design = fit_binary_logit_for_codes(
         df_obs_no_theoretic,
         positive_codes=female_codes,
         negative_codes=male_codes,
@@ -352,6 +352,49 @@ def run_gender_analysis(
             index=False,
             encoding="Shift_JIS",
         )
+
+    fem_coeff_df = pd.DataFrame(
+        {
+            "coef": fem_res.params,
+            "std_err": fem_res.bse,
+            "z": fem_res.tvalues,
+            "p_value": fem_res.pvalues,
+        }
+    )
+    fem_conf_int = fem_res.conf_int(alpha=0.05)
+    fem_conf_int.columns = ["0.025", "0.975"]
+    fem_coeff_df = fem_coeff_df.join(fem_conf_int)
+    fem_coeff_df = fem_coeff_df.reset_index().rename(columns={"index": "exog"})
+    fem_coeff_df.insert(0, "endog", "is_female")
+    fem_coeff_df = fem_coeff_df[
+        [
+            "endog",
+            "exog",
+            "coef",
+            "std_err",
+            "z",
+            "p_value",
+            "0.025",
+            "0.975",
+        ]
+    ]
+    _exp_odds_ratio_columns(fem_coeff_df)
+
+    fem_method_subset = fem_coeff_df[fem_coeff_df["exog"].isin(METHOD_COLUMNS)].copy()
+    if not fem_method_subset.empty:
+        plot_method_odds_ratios(
+            fem_method_subset,
+            METHOD_COLUMNS,
+            out_dir / "female_vs_male_odds_ratio_methods.png",
+        )
+
+    plot_binary_year_effect_prediction(
+        fem_res,
+        df_fem_design,
+        out_dir / "female_vs_male_year_effect_prediction.png",
+        ylabel="女性コード選択確率",
+        y_limits=(0.0, 1.0),
+    )
 
 
 def main() -> None:
