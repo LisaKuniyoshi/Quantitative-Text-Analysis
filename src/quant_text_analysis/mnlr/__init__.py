@@ -17,6 +17,7 @@ from .model import (
     predict_probabilities,
 )
 from .plotting import (
+    plot_binary_year_effect_prediction,
     plot_method_odds_ratios,
     plot_prob_by_year_with_method,
     plot_year_odds_ratios,
@@ -33,6 +34,7 @@ __all__ = [
     "fit_binary_logit_for_code",
     "fit_binary_logit_for_codes",
     "fit_mnlogit",
+    "plot_binary_year_effect_prediction",
     "plot_method_odds_ratios",
     "plot_prob_by_year_with_method",
     "plot_year_odds_ratios",

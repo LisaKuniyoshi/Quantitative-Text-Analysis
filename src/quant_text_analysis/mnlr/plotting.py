@@ -10,8 +10,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from statsmodels.discrete.discrete_model import BinaryResultsWrapper
 
 from quant_text_analysis.grouping import METHOD_CODE_TO_LABEL
+from .coding import METHOD_COLUMNS
 
 FONT_FAMILY = "Yu Mincho"   # or "游明朝"
 
@@ -209,11 +211,11 @@ def plot_method_odds_ratios(
         ax.set_yticklabels([method_labels.get(m, m) for m in data["exog"]])
         ax.invert_yaxis()
         ax.grid(axis="x", color="lightgray", linestyle=":", linewidth=0.5, which="both")
-        ax.set_title(str(code))
+        # ax.set_title(str(code))
 
     for idx, ax in enumerate(axes):
         if idx // ncols == nrows - 1:
-            ax.set_xlabel("Odds Ratio")
+            ax.set_xlabel("オッズ比")
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=120)
@@ -272,5 +274,98 @@ def plot_year_odds_ratios(
     ax.set_title("Effect of Year (Odds Ratio per 1-year increase)")
 
     fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
+
+
+def plot_binary_year_effect_prediction(
+    result: BinaryResultsWrapper,
+    df_training: pd.DataFrame,
+    out_path: Path,
+    *,
+    ylabel: str = "Predicted probability",
+    # title: str = "Year effect (method dummies = 0)",
+    n_points: int = 200,
+) -> None:
+    """Plot get_prediction-based year effect for a binary logit in grayscale."""
+
+    if result is None or df_training is None or df_training.empty:
+        return
+
+    if "year" not in df_training.columns:
+        return
+
+    year_values = pd.to_numeric(df_training["year"], errors="coerce").dropna()
+    if year_values.nunique() < 2:
+        return
+
+    exog_names = list(getattr(result.model, "exog_names", []))
+    if "year_centered" not in exog_names:
+        return
+
+    year_min = float(year_values.min())
+    year_max = float(year_values.max())
+    if not np.isfinite(year_min) or not np.isfinite(year_max):
+        return
+
+    grid_years = np.linspace(year_min, year_max, max(2, int(n_points)))
+    year_center = float(year_values.mean())
+    centered_vals = grid_years - year_center
+
+    predict_df = pd.DataFrame(index=range(len(grid_years)))
+    if "Intercept" in exog_names:
+        predict_df["Intercept"] = 1.0
+
+    for name in exog_names:
+        if name == "Intercept":
+            continue
+        if name == "year_centered":
+            predict_df[name] = centered_vals
+        else:
+            predict_df[name] = 0.0
+
+    try:
+        pred = result.get_prediction(predict_df)
+    except Exception:
+        return
+
+    frame = pred.summary_frame(alpha=0.05)
+    mean_candidates = ("mean", "predicted")
+    lower_candidates = ("mean_ci_lower", "obs_ci_lower", "ci_lower")
+    upper_candidates = ("mean_ci_upper", "obs_ci_upper", "ci_upper")
+    mean_col = next((c for c in mean_candidates if c in frame.columns), None)
+    lower_col = next((c for c in lower_candidates if c in frame.columns), None)
+    upper_col = next((c for c in upper_candidates if c in frame.columns), None)
+    if mean_col is None or lower_col is None or upper_col is None:
+        return
+
+    mean = np.clip(frame[mean_col].to_numpy(), 0.0, 1.0)
+    lower = np.clip(frame[lower_col].to_numpy(), 0.0, 1.0)
+    upper = np.clip(frame[upper_col].to_numpy(), 0.0, 1.0)
+
+    fig, ax = plt.subplots(figsize=(6, 4), dpi=120)
+    ax.plot(grid_years, mean, color="black", linewidth=2.0, label="予測値")
+    ax.fill_between(grid_years, lower, upper, color="gainsboro", alpha=0.6, label="95% 信頼区間")
+    ax.set_xlabel("出版年")
+    ax.set_ylabel(ylabel)
+    # ax.set_title(title)
+
+    ax.set_ylim(0.0, 0.2)
+    ax.grid(color="lightgray", linestyle=":", linewidth=0.5)
+    ax.legend(frameon=False, loc="best")
+    # ax.text(
+    #     0.5,
+    #     -0.18,
+    #     "Method dummies fixed at 0",
+    #     transform=ax.transAxes,
+    #     ha="center",
+    #     va="top",
+    #     fontsize=9,
+    #     color="dimgray",
+    # )
+
+    fig.tight_layout()
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=120)
     plt.close(fig)

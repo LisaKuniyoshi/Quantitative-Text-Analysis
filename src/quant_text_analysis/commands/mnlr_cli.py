@@ -23,6 +23,7 @@ from quant_text_analysis.mnlr import (
     fit_binary_logit,
     fit_binary_logit_for_codes,
     invert_code_map,
+    plot_binary_year_effect_prediction,
     plot_method_odds_ratios,
     plot_year_odds_ratios,
 )
@@ -214,7 +215,7 @@ def run_gender_analysis(
 
     summarize_token_counts(df_obs_all, out_dir, label="gender")
 
-    bin_res, _ = fit_binary_logit(df_obs_all, no_code_label=NO_CODE_LABEL)
+    bin_res, df_bin_design = fit_binary_logit(df_obs_all, no_code_label=NO_CODE_LABEL)
 
     bin_summary = bin_res.summary()
     summary_str = bin_summary.as_text()
@@ -250,11 +251,69 @@ def run_gender_analysis(
             encoding="Shift_JIS",
         )
 
+    coeff_df = pd.DataFrame(
+        {
+            "coef": bin_res.params,
+            "std_err": bin_res.bse,
+            "z": bin_res.tvalues,
+            "p_value": bin_res.pvalues,
+        }
+    )
+    conf_int = bin_res.conf_int(alpha=0.05)
+    conf_int.columns = ["0.025", "0.975"]
+    coeff_df = coeff_df.join(conf_int)
+    coeff_df = coeff_df.reset_index().rename(columns={"index": "exog"})
+    coeff_df.insert(0, "endog", "code_selected")
+    coeff_df = coeff_df[
+        [
+            "endog",
+            "exog",
+            "coef",
+            "std_err",
+            "z",
+            "p_value",
+            "0.025",
+            "0.975",
+        ]
+    ]
+    _exp_odds_ratio_columns(coeff_df)
+
+    method_subset = coeff_df[coeff_df["exog"].isin(METHOD_COLUMNS)].copy()
+    if not method_subset.empty:
+        plot_method_odds_ratios(
+            method_subset,
+            METHOD_COLUMNS,
+            out_dir / "odds_ratio_methods.png",
+        )
+
+    plot_binary_year_effect_prediction(
+        bin_res,
+        df_bin_design,
+        out_dir / "year_effect_prediction.png",
+        ylabel="コード選択確率",
+        # title="Gender code selection vs year",
+    )
+
     female_codes: tuple[str, ...] = ("【女性】",)
     male_codes: tuple[str, ...] = ("【男性】",)
 
+    theoretic_doc_ids = set(
+        df_obs_all.loc[df_obs_all["theoretic"] == 1, "doc_id"].unique().tolist()
+    )
+    if theoretic_doc_ids:
+        print(
+            f"[Gender] Female vs Male logit excludes {len(theoretic_doc_ids)} theoretic-docs"
+        )
+    df_obs_no_theoretic = df_obs_all[
+        ~df_obs_all["doc_id"].isin(theoretic_doc_ids)
+    ].copy()
+    if df_obs_no_theoretic.empty:
+        raise RuntimeError(
+            "female_vs_male logit用の文書が理論的研究除外後に残っていません。"
+        )
+
     fem_res, _ = fit_binary_logit_for_codes(
-        df_obs_all,
+        df_obs_no_theoretic,
         positive_codes=female_codes,
         negative_codes=male_codes,
         target_column="is_female",
