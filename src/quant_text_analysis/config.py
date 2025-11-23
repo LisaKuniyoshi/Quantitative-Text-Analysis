@@ -90,10 +90,10 @@ CODE_MAP_CLUSTER: dict[str, tuple[str, ...]] = {
     # クラスタ10【疲弊】
     "【疲弊】": (
         "burnout",
-        "risk_factor"
+        "risk_factor",
         "exhaustion",
         "depression",
-        "mionority_stress",
+        "minority_stress",
         "stress",
         "minority",
     ),
@@ -144,7 +144,7 @@ CODE_MAP_GENDER: dict[str, tuple[str, ...]] = {
         "sex",
         "sex_at_birth",
         "sex_assigned_at_birth",
-        "sex_disignated_at_birth",
+        "sex_designated_at_birth",
     ),
 }
 
