@@ -144,42 +144,49 @@ def _build_log_ticks(axis_min: float, axis_max: float) -> list[float]:
 
 
 def plot_method_odds_ratios(
-    odds_df: pd.DataFrame,
+    pairwise_df: pd.DataFrame,
     method_order: Iterable[str],
     out_path: Path,
     *,
     show_titles: bool = True,
 ) -> None:
-    """Plot odds ratios for method dummies per code as grayscale facets."""
+    """Plot pairwise odds-difference (odds ratios) with 95% CI for method contrasts."""
 
     method_order = list(method_order)
-    if odds_df.empty or not method_order:
+    if pairwise_df.empty or not method_order:
         return
 
-    odds_df = odds_df.copy()
-    for column in ("coef", "0.025", "0.975"):
-        odds_df[column] = pd.to_numeric(odds_df[column], errors="coerce")
+    df = pairwise_df.copy()
+    numeric_cols = ("odds_diff", "ci_lower", "ci_upper")
+    for column in numeric_cols:
+        df[column] = pd.to_numeric(df[column], errors="coerce")
 
-    odds_df = odds_df.dropna(subset=["coef", "0.025", "0.975"])
-    if odds_df.empty:
+    df = df.dropna(subset=numeric_cols)
+    if df.empty:
         return
 
-    method_set = set(method_order)
-    odds_df = odds_df[odds_df["exog"].isin(method_set)]
-    if odds_df.empty:
+    # Ensure strictly positive ratios so log-scale plotting is well-defined.
+    df = df[(df["odds_diff"] > 0) & (df["ci_lower"] > 0) & (df["ci_upper"] > 0)]
+    if df.empty:
         return
 
     order_map = {name: idx for idx, name in enumerate(method_order)}
-    odds_df["method_rank"] = odds_df["exog"].map(order_map)
-    odds_df = odds_df.dropna(subset=["method_rank"])
-    if odds_df.empty:
+    df["rank_a"] = df["method_a"].map(order_map)
+    df["rank_b"] = df["method_b"].map(order_map)
+    df = df.dropna(subset=["rank_a", "rank_b"])
+    if df.empty:
         return
 
-    axis_min, axis_max = _compute_log_symmetric_axis_limits(
-        itertools.chain(odds_df["coef"], odds_df["0.025"], odds_df["0.975"])
-    )
+    df["rank_a"] = df["rank_a"].astype(int)
+    df["rank_b"] = df["rank_b"].astype(int)
 
-    codes = sorted(odds_df["endog"].unique())
+    df["ci_low"] = df[["ci_lower", "ci_upper"]].min(axis=1)
+    df["ci_high"] = df[["ci_lower", "ci_upper"]].max(axis=1)
+
+    axis_min = 0.05
+    axis_max = 30.0
+
+    codes = sorted(df["endog"].unique())
     n_codes = len(codes)
     ncols = 2 if n_codes > 1 else 1
     nrows = int(np.ceil(n_codes / ncols))
@@ -196,25 +203,27 @@ def plot_method_odds_ratios(
     method_labels = {m: METHOD_CODE_TO_LABEL.get(m, m) for m in method_order}
 
     for ax, code in itertools.zip_longest(axes, codes):
+        if ax is None:
+            continue
+
         if code is None:
             ax.axis("off")
             continue
 
-        data = odds_df[odds_df["endog"] == code].copy()
-        data = data.sort_values("method_rank")
+        data = df[df["endog"] == code].copy()
         if data.empty:
             ax.axis("off")
             continue
 
+        data = data.sort_values(["rank_a", "rank_b"]).reset_index(drop=True)
         positions = np.arange(len(data))
         errors = np.vstack(
-            [data["coef"] - data["0.025"], data["0.975"] - data["coef"]]
+            [data["odds_diff"] - data["ci_low"], data["ci_high"] - data["odds_diff"]]
         )
 
         ax.set_xscale("log")
-
         ax.errorbar(
-            data["coef"],
+            data["odds_diff"],
             positions,
             xerr=errors,
             fmt="o",
@@ -234,8 +243,12 @@ def plot_method_odds_ratios(
             )
         ax.xaxis.set_minor_formatter(NullFormatter())
 
+        pair_labels = [
+            f"{method_labels.get(a, a)} / {method_labels.get(b, b)}"
+            for a, b in zip(data["method_a"], data["method_b"])
+        ]
         ax.set_yticks(positions)
-        ax.set_yticklabels([method_labels.get(m, m) for m in data["exog"]])
+        ax.set_yticklabels(pair_labels)
         ax.invert_yaxis()
         ax.grid(axis="x", color="lightgray", linestyle=":", linewidth=0.5, which="both")
         if show_titles:
@@ -244,8 +257,28 @@ def plot_method_odds_ratios(
     for idx, ax in enumerate(axes):
         if idx // ncols == nrows - 1:
             ax.set_xlabel("オッズ比")
+            ax.text(
+                0.0,
+                -0.2,
+                "←後者寄り",
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=10,
+                color="gray",
+            )
+            ax.text(
+                1.0,
+                -0.2,
+                "前者寄り→",
+                transform=ax.transAxes,
+                ha="right",
+                va="top",
+                fontsize=10,
+                color="gray",
+            )
 
-    fig.tight_layout()
+    fig.tight_layout(rect=(0.0, 0.05, 1.0, 1.0))
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
 

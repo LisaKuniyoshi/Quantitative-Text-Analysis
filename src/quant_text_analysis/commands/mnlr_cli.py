@@ -29,6 +29,7 @@ from quant_text_analysis.mnlr import (
 )
 from quant_text_analysis.mnlr.model import fit_binary_logit_for_code
 from quant_text_analysis.mnlr.coding import METHOD_COLUMNS
+from quant_text_analysis.mnlr.statsmodels_fork import pairwise_method_tests_binary
 from quant_text_analysis.preprocess.nlp_backend import SpacyBackend
 from quant_text_analysis.preprocess.normalize import build_normalizer
 from quant_text_analysis.preprocess.perdoc import analyze_docs_with_cache
@@ -126,6 +127,7 @@ def run_cluster_analysis(
             "除外コードを考慮すると推定対象のクラスタコードが存在しません。"
         )
     combined_results: List[pd.DataFrame] = []
+    pairwise_results: List[pd.DataFrame] = []
 
     def _safe_filename(label: str) -> str:
         forbidden = '<>:"/\\|?*'
@@ -175,21 +177,17 @@ def run_cluster_analysis(
         _exp_odds_ratio_columns(coeff_df)
         combined_results.append(coeff_df)
 
+        pairwise_df = pairwise_method_tests_binary(
+            res,
+            target_label=code_label,
+            method_columns=METHOD_COLUMNS,
+        )
+        if not pairwise_df.empty and code_label not in EXCLUDED_CLUSTER_PLOT_CODES:
+            pairwise_results.append(pairwise_df)
+
     if combined_results:
         merged = pd.concat(combined_results, ignore_index=True)
         merged.to_csv(out_dir / "margeff.csv", index=False, encoding="Shift_JIS")
-
-        method_subset = merged[merged["exog"].isin(METHOD_COLUMNS)].copy()
-        if not method_subset.empty:
-            method_subset = method_subset[
-                ~method_subset["endog"].isin(EXCLUDED_CLUSTER_PLOT_CODES)
-            ]
-            if not method_subset.empty:
-                plot_method_odds_ratios(
-                    method_subset,
-                    METHOD_COLUMNS,
-                    out_dir / "odds_ratio_methods.png",
-                )
 
         year_subset = merged[merged["exog"] == "year_centered"].copy()
         if not year_subset.empty:
@@ -214,6 +212,24 @@ def run_cluster_analysis(
             index=False,
             encoding="Shift_JIS",
         )
+
+    if pairwise_results:
+        pairwise_merged = pd.concat(pairwise_results, ignore_index=True)
+        pairwise_merged.to_csv(
+            out_dir / "pairwise_method_tests.csv",
+            index=False,
+            encoding="Shift_JIS",
+        )
+
+        pairwise_plot_df = pairwise_merged[
+            ~pairwise_merged["endog"].isin(EXCLUDED_CLUSTER_PLOT_CODES)
+        ]
+        if not pairwise_plot_df.empty:
+            plot_method_odds_ratios(
+                pairwise_plot_df,
+                METHOD_COLUMNS,
+                out_dir / "odds_ratio_methods.png",
+            )
 
 
 def run_gender_analysis(
@@ -298,10 +314,19 @@ def run_gender_analysis(
     ]
     _exp_odds_ratio_columns(coeff_df)
 
-    method_subset = coeff_df[coeff_df["exog"].isin(METHOD_COLUMNS)].copy()
-    if not method_subset.empty:
+    bin_pairwise = pairwise_method_tests_binary(
+        bin_res,
+        target_label="code_selected",
+        method_columns=METHOD_COLUMNS,
+    )
+    if not bin_pairwise.empty:
+        bin_pairwise.to_csv(
+            out_dir / "pairwise_method_tests_binlogit.csv",
+            index=False,
+            encoding="Shift_JIS",
+        )
         plot_method_odds_ratios(
-            method_subset,
+            bin_pairwise,
             METHOD_COLUMNS,
             out_dir / "odds_ratio_methods.png",
             show_titles=False,
@@ -401,10 +426,19 @@ def run_gender_analysis(
     ]
     _exp_odds_ratio_columns(fem_coeff_df)
 
-    fem_method_subset = fem_coeff_df[fem_coeff_df["exog"].isin(METHOD_COLUMNS)].copy()
-    if not fem_method_subset.empty:
+    fem_pairwise = pairwise_method_tests_binary(
+        fem_res,
+        target_label="is_female",
+        method_columns=METHOD_COLUMNS,
+    )
+    if not fem_pairwise.empty:
+        fem_pairwise.to_csv(
+            out_dir / "pairwise_method_tests_female_vs_male.csv",
+            index=False,
+            encoding="Shift_JIS",
+        )
         plot_method_odds_ratios(
-            fem_method_subset,
+            fem_pairwise,
             METHOD_COLUMNS,
             out_dir / "female_vs_male_odds_ratio_methods.png",
             show_titles=False,

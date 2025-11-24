@@ -28,10 +28,10 @@ def period_group_year(y: int) -> list[str]:
 
 
 METHOD_CODE_TO_LABEL: dict[str, str] = {
-    "qual": "質的研究",
-    "quan": "量的研究",
-    "review": "レビュー",
-    "theoretic": "理論的研究",
+    "qual": "質",
+    "quan": "量",
+    "review": "レ",
+    "theoretic": "理",
     "other": "その他",
 }
 

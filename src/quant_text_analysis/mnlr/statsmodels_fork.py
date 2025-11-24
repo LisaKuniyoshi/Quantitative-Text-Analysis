@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from itertools import combinations
 from typing import Any, Dict, List, Tuple, Sequence
 
 import numpy as np
@@ -9,7 +10,11 @@ import pandas as pd
 from scipy import stats
 from scipy.stats import norm
 from statsmodels.discrete.discrete_margins import DiscreteMargins
-from statsmodels.discrete.discrete_model import MultinomialResults, MultinomialResultsWrapper
+from statsmodels.discrete.discrete_model import (
+    BinaryResultsWrapper,
+    MultinomialResults,
+    MultinomialResultsWrapper,
+)
 from statsmodels.stats.multitest import multipletests
 
 
@@ -411,3 +416,96 @@ def pairwise_ame_multihot(
         outs.append(sub)
 
     return pd.concat(outs, ignore_index=True)
+
+
+def pairwise_method_tests_binary(
+    result: BinaryResultsWrapper,
+    *,
+    target_label: str,
+    method_columns: Sequence[str],
+    alpha: float = 0.05,
+) -> pd.DataFrame:
+    """Compute pairwise contrasts between binary-logit method dummies."""
+
+    if result is None:
+        return pd.DataFrame()
+
+    model = getattr(result, "model", None)
+    exog_names: List[str] = list(getattr(model, "exog_names", []) or [])
+    if not exog_names:
+        return pd.DataFrame()
+
+    idx_map: Dict[str, int] = {name: idx for idx, name in enumerate(exog_names)}
+    available_methods: List[str] = [
+        name for name in method_columns if name in idx_map
+    ]
+    combos = list(combinations(available_methods, 2))
+    if not combos:
+        return pd.DataFrame()
+
+    param_count = len(result.params)
+    records: List[Dict[str, Any]] = []
+
+    def _as_scalar(value: Any) -> float:
+        arr = np.asarray(value)
+        if arr.size == 0:
+            return float("nan")
+        return float(arr.reshape(-1)[0])
+
+    for method_a, method_b in combos:
+        contrast = np.zeros(param_count)
+        contrast[idx_map[method_a]] = 1.0
+        contrast[idx_map[method_b]] = -1.0
+        test = result.t_test(contrast)
+        coef_diff = _as_scalar(test.effect)
+        std_err = _as_scalar(test.sd)
+        t_value = _as_scalar(test.tvalue)
+        p_value = _as_scalar(test.pvalue)
+        df_denom = _as_scalar(getattr(test, "df_denom", np.nan))
+
+        if np.isfinite(std_err) and std_err >= 0:
+            if np.isfinite(df_denom) and df_denom > 0:
+                critical = stats.t.ppf(1.0 - alpha / 2.0, df_denom)
+            else:
+                critical = stats.norm.ppf(1.0 - alpha / 2.0)
+            if not np.isfinite(critical):
+                ci_half = float("nan")
+            else:
+                ci_half = critical * std_err
+            ci_lower_log = coef_diff - ci_half if np.isfinite(ci_half) else float("nan")
+            ci_upper_log = coef_diff + ci_half if np.isfinite(ci_half) else float("nan")
+        else:
+            ci_lower_log = float("nan")
+            ci_upper_log = float("nan")
+
+        odds_diff = float(np.exp(coef_diff)) if np.isfinite(coef_diff) else float("nan")
+        ci_lower = float(np.exp(ci_lower_log)) if np.isfinite(ci_lower_log) else float("nan")
+        ci_upper = float(np.exp(ci_upper_log)) if np.isfinite(ci_upper_log) else float("nan")
+
+        records.append(
+            {
+                "endog": target_label,
+                "method_a": method_a,
+                "method_b": method_b,
+                "odds_diff": odds_diff,
+                "std_err": std_err,
+                "t_value": t_value,
+                "p_value": p_value,
+                "df_denom": df_denom,
+                "ci_lower": ci_lower,
+                "ci_upper": ci_upper,
+            }
+        )
+
+    df_tests = pd.DataFrame.from_records(records)
+    if df_tests.empty:
+        return df_tests
+
+    _, p_adj, _, reject = multipletests(
+        df_tests["p_value"],
+        alpha=alpha,
+        method="hs",
+    )
+    df_tests["p_value_hs"] = p_adj
+    df_tests["reject_hs"] = reject
+    return df_tests
