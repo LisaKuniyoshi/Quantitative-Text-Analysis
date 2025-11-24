@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.discrete.discrete_model import BinaryResultsWrapper
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, NullFormatter
 
 from quant_text_analysis.grouping import METHOD_CODE_TO_LABEL
 from .coding import METHOD_COLUMNS
@@ -232,6 +232,7 @@ def plot_method_odds_ratios(
             ax.xaxis.set_major_formatter(
                 FuncFormatter(lambda val, _: f"{val:g}")
             )
+        ax.xaxis.set_minor_formatter(NullFormatter())
 
         ax.set_yticks(positions)
         ax.set_yticklabels([method_labels.get(m, m) for m in data["exog"]])
@@ -298,6 +299,7 @@ def plot_year_odds_ratios(
     if tick_values:
         ax.set_xticks(tick_values)
         ax.xaxis.set_major_formatter(FuncFormatter(lambda val, _: f"{val:g}"))
+    ax.xaxis.set_minor_formatter(NullFormatter())
     ax.set_yticks(positions)
     ax.set_yticklabels(list(odds_df["endog"]))
     ax.invert_yaxis()
