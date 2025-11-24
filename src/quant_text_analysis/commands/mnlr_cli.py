@@ -41,6 +41,10 @@ from quant_text_analysis.config import (
 )
 
 
+EXCLUDED_CLUSTER_CODES: set[str] = {"【手段】"}
+EXCLUDED_CLUSTER_PLOT_CODES: set[str] = {"【代替戦略】"}
+
+
 def summarize_token_counts(
     df_obs_all: pd.DataFrame,
     out_dir: Path,
@@ -114,7 +118,13 @@ def run_cluster_analysis(
             "no_code 以外の観測がありません。CODE_MAP_CLUSTER を確認してください。"
         )
 
-    sorted_codes: List[str] = sorted(str(code) for code in codes_in_data)
+    sorted_codes: List[str] = sorted(
+        str(code) for code in codes_in_data if str(code) not in EXCLUDED_CLUSTER_CODES
+    )
+    if not sorted_codes:
+        raise RuntimeError(
+            "除外コードを考慮すると推定対象のクラスタコードが存在しません。"
+        )
     combined_results: List[pd.DataFrame] = []
 
     def _safe_filename(label: str) -> str:
@@ -170,14 +180,24 @@ def run_cluster_analysis(
         merged.to_csv(out_dir / "margeff.csv", index=False, encoding="Shift_JIS")
 
         method_subset = merged[merged["exog"].isin(METHOD_COLUMNS)].copy()
-        plot_method_odds_ratios(
-            method_subset,
-            METHOD_COLUMNS,
-            out_dir / "odds_ratio_methods.png",
-        )
+        if not method_subset.empty:
+            method_subset = method_subset[
+                ~method_subset["endog"].isin(EXCLUDED_CLUSTER_PLOT_CODES)
+            ]
+            if not method_subset.empty:
+                plot_method_odds_ratios(
+                    method_subset,
+                    METHOD_COLUMNS,
+                    out_dir / "odds_ratio_methods.png",
+                )
 
         year_subset = merged[merged["exog"] == "year_centered"].copy()
-        plot_year_odds_ratios(year_subset, out_dir / "odds_ratio_year.png")
+        if not year_subset.empty:
+            year_subset = year_subset[
+                ~year_subset["endog"].isin(EXCLUDED_CLUSTER_PLOT_CODES)
+            ]
+            if not year_subset.empty:
+                plot_year_odds_ratios(year_subset, out_dir / "odds_ratio_year.png")
     else:
         empty_cols: List[str] = [
             "endog",
@@ -284,6 +304,7 @@ def run_gender_analysis(
             method_subset,
             METHOD_COLUMNS,
             out_dir / "odds_ratio_methods.png",
+            show_titles=False,
         )
 
     plot_binary_year_effect_prediction(
@@ -386,6 +407,7 @@ def run_gender_analysis(
             fem_method_subset,
             METHOD_COLUMNS,
             out_dir / "female_vs_male_odds_ratio_methods.png",
+            show_titles=False,
         )
 
     plot_binary_year_effect_prediction(

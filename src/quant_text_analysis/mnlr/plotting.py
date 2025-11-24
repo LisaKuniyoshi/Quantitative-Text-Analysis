@@ -147,6 +147,8 @@ def plot_method_odds_ratios(
     odds_df: pd.DataFrame,
     method_order: Iterable[str],
     out_path: Path,
+    *,
+    show_titles: bool = True,
 ) -> None:
     """Plot odds ratios for method dummies per code as grayscale facets."""
 
@@ -235,7 +237,8 @@ def plot_method_odds_ratios(
         ax.set_yticklabels([method_labels.get(m, m) for m in data["exog"]])
         ax.invert_yaxis()
         ax.grid(axis="x", color="lightgray", linestyle=":", linewidth=0.5, which="both")
-        # ax.set_title(str(code))
+        if show_titles:
+            ax.set_title(str(code))
 
     for idx, ax in enumerate(axes):
         if idx // ncols == nrows - 1:
@@ -299,8 +302,8 @@ def plot_year_odds_ratios(
     ax.set_yticklabels(list(odds_df["endog"]))
     ax.invert_yaxis()
     ax.grid(axis="x", color="lightgray", linestyle=":", linewidth=0.5, which="both")
-    ax.set_xlabel("Odds Ratio")
-    ax.set_title("Effect of Year (Odds Ratio per 1-year increase)")
+    ax.set_xlabel("オッズ比")
+    # ax.set_title("Effect of Year (Odds Ratio per 1-year increase)")
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=120)
