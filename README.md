@@ -158,7 +158,7 @@ python -m quant_text_analysis mnlr
 - `t_test_pairwise_mnlogit` により係数レベルでのペアワイズ t 検定も実行可能（スクリプトから呼び出し）
 - コード定義は `config.CODE_MAP` を参照
 
-ペアワイズ検定ユーティリティ（`quant_text_analysis.mnlr.statsmodels_fork`）は、statsmodels の公開 API のみを利用しており、平均限界効果または係数差についてロバスト共分散を尊重した検定結果を DataFrame で取得できます。*** End Patch
+ペアワイズ検定ユーティリティ（`quant_text_analysis.mnlr.statsmodels_fork`）は、statsmodels の公開 API のみを利用しており、平均限界効果または係数差についてロバスト共分散を尊重した検定結果を DataFrame で取得できます。
 
 ## 設定のカスタマイズ
 
