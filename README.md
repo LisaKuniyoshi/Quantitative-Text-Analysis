@@ -145,9 +145,12 @@ python -m quant_text_analysis mnlr
 ```
 
 **出力ファイル:**
-- `outputs/{タイムスタンプ}/mnlogit_summary.txt` - MNLogit 推定結果の全文サマリ
-- `outputs/{タイムスタンプ}/margeff_year_centered.csv` - `year_centered` の平均限界効果と標準誤差
-- `outputs/{タイムスタンプ}/pairwise_ame_mnlogit.csv` - 手法カテゴリ間の平均限界効果差に対するペアワイズ検定結果
+- `outputs/{タイムスタンプ}/cluster/margeff.csv`
+- `outputs/{タイムスタンプ}/cluster/pairwise_method_tests.csv`
+- `outputs/{タイムスタンプ}/cluster/odds_ratio_year.png`
+- `outputs/{タイムスタンプ}/cluster/odds_ratio_methods.png`
+- `outputs/{タイムスタンプ}/gender/binlogit_results.csv`
+- `outputs/{タイムスタンプ}/gender/year_effect_prediction.png`
 
 **特徴:**
 - 手法タグはセミコロン区切りの複数指定に対応し、`qual`/`quan`/`review`/`theoretic`
