@@ -32,12 +32,7 @@ git clone https://github.com/LisaKuniyoshi/Quantitative-Text-Analysis.git
 cd Quantitative-Text-Analysis
 ```
 
-2. 依存パッケージをインストールします：
-```bash
-pip install -r requirements.txt
-```
-
-3. パッケージをインストールします：
+1. パッケージをインストールします：
 ```bash
 pip install -e .
 ```
