@@ -136,9 +136,9 @@ python -m quant_text_analysis cross_table
 - トークン化は既存のキャッシュを再利用しつつ再計算
 - 手法ラベルは `grouping.method_group` の分類を適用
 
-### 5. 多項ロジット推定と可視化 (mnlr)
+### 5. ニ項ロジスティック回帰と可視化 (mnlr)
 
-文書トークンをコードに展開し、多項ロジット（MNLogit）で年・研究手法の効果を推定します。
+文書トークンをコードに展開し、ニ項ロジスティック回帰で年・研究手法の効果を推定します。
 
 ```bash
 python -m quant_text_analysis mnlr
