@@ -132,7 +132,7 @@ python -m quant_text_analysis cross_table
 - `outputs/{タイムスタンプ}/code_method_crosstab_docs.csv` - コード×研究手法（文書数）のクロス表
 
 **特徴:**
-- `config.CODE_MAP` に定義したコード集合を利用
+- `config.CODE_MAP_CLUSTER` に定義したコード集合を利用
 - トークン化は既存のキャッシュを再利用しつつ再計算
 - 手法ラベルは `grouping.method_group` の分類を適用
 
@@ -156,10 +156,7 @@ python -m quant_text_analysis mnlr
 - 手法タグはセミコロン区切りの複数指定に対応し、`qual`/`quan`/`review`/`theoretic`
   をマルチホットなダミー変数としてモデルへ投入します。
 - 文書 ID をクラスタとするロバスト共分散推定を実施
-- `pairwise_ame_mnlogit` を用いて手法カテゴリ間の平均限界効果差を多重比較補正付きで評価
-- `pairwise_ame_multihot` により複数のマルチホットダミー列間で平均限界効果のペア比較を実行
-- `t_test_pairwise_mnlogit` により係数レベルでのペアワイズ t 検定も実行可能（スクリプトから呼び出し）
-- コード定義は `config.CODE_MAP` を参照
+- コード定義は `config.CODE_MAP_CLUSTER` および `config.CODE_MAP_GENDER` を参照
 
 ペアワイズ検定ユーティリティ（`quant_text_analysis.mnlr.statsmodels_fork`）は、statsmodels の公開 API のみを利用しており、平均限界効果または係数差についてロバスト共分散を尊重した検定結果を DataFrame で取得できます。
 
