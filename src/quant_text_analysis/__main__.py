@@ -51,8 +51,11 @@ def main(argv: List[str] | None = None) -> int:
     sp_phr = subparsers.add_parser("phrases", help="フレーズ候補の抽出")
     sp_phr.set_defaults(_module="quant_text_analysis.commands.phrases_cli")
 
-    sp_clu = subparsers.add_parser("cluster", help="PPMI→SVD→球面k-means の一括実行")
+    sp_clu = subparsers.add_parser("cluster", help="語のベクトル化→SVD→球面k-means の一括実行")
     sp_clu.set_defaults(_module="quant_text_analysis.commands.cluster_cli")
+
+    sp_cross = subparsers.add_parser("cross_table", help="クロス集計")
+    sp_cross.set_defaults(_module="quant_text_analysis.commands.cross_table")
 
     sp_mnlr = subparsers.add_parser("mnlr", help="文書クラスタに対する多項ロジット推定と可視化",)
     sp_mnlr.set_defaults(_module="quant_text_analysis.commands.mnlr_cli")
