@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-quant-text-analysis = "quant_text_analysis.cli:main"
+quant-text-analysis = "quant_text_analysis.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]  # ← src レイアウト
