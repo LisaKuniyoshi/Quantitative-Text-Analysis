@@ -27,8 +27,7 @@ I/O:
     形態素解析は spaCy（`spacy_model`）を使用し、文書ごとの頻度はキャッシュ可能です。
 
 使用例:
-    >>> python -m quant_text_analysis.cluster.app
-    >>> python path/to/cluster_cli.py
+    >>> python -m quant_text_analysis cluster
 """
 from __future__ import annotations
 

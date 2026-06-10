@@ -18,8 +18,7 @@ I/O:
     - 手法: "qual" / "quan" / "theoretic" / "review" / "other"
 
 使用例:
-    python -m quant_text_analysis.cli
-    python path/to/freq_cli.py
+    python -m quant_text_analysis freq
 """
 from __future__ import annotations
 

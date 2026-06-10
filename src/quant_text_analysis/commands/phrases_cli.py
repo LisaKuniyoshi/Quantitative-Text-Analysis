@@ -16,8 +16,7 @@ I/O:
     - 表記統一に `breame.spelling.get_american_spelling` を利用します。
 
 使用例:
-    python -m quant_text_analysis.phrase_discovery
-    python path/to/phrases_cli.py
+    python -m quant_text_analysis phrases
 """
 from __future__ import annotations
 
