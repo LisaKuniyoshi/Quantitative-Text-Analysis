@@ -28,7 +28,7 @@
 
 1. リポジトリをクローンします：
 ```bash
-git clone https://github.com/Slaine00/Quantitative-Text-Analysis.git
+git clone https://github.com/LisaKuniyoshi/Quantitative-Text-Analysis.git
 cd Quantitative-Text-Analysis
 ```
 
