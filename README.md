@@ -32,7 +32,7 @@ git clone https://github.com/LisaKuniyoshi/Quantitative-Text-Analysis.git
 cd Quantitative-Text-Analysis
 ```
 
-1. パッケージをインストールします：
+2. パッケージをインストールします：
 ```bash
 pip install -e .
 ```
