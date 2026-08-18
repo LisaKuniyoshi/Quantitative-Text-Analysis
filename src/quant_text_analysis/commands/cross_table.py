@@ -19,7 +19,7 @@ from __future__ import annotations
 import pandas as pd
 
 from quant_text_analysis.settings import Settings
-from quant_text_analysis.grouping import method_group, method_label_string
+from quant_text_analysis.grouping import method_group
 from quant_text_analysis.io.loader import load_df
 from quant_text_analysis.preprocess.nlp_backend import SpacyBackend
 from quant_text_analysis.preprocess.normalize import build_normalizer
@@ -56,8 +56,7 @@ def main() -> None:
     per_doc_codes = codes_per_doc(per_doc_tokens, code_index)
 
     # 手法カテゴリを日本語ラベルへ変換（該当なしは「その他」扱い）
-    method_codes = df["manual_tags"].apply(method_group)
-    method = method_codes.apply(method_label_string)
+    method = df["manual_tags"].apply(method_group)
     # 文書単位のクロス集計（出現文書数）
     # 行=コード、列=手法、値=その手法の文書数のうちコードが出た文書数
     ctab = build_code_method_crosstab(

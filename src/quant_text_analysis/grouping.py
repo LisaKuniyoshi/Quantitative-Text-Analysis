@@ -28,7 +28,7 @@ def period_group_year(y: int) -> list[str]:
 
 
 METHOD_CODE_TO_LABEL: dict[str, str] = {
-    """研究手法カテゴリの Zotero タグと、その図表用ラベル。編集可。"""
+    # 研究手法カテゴリの Zotero タグと、その図表用ラベル。編集可。
     "qual": "質",
     "quan": "量",
     "review": "レ",
