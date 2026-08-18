@@ -18,7 +18,7 @@ from statsmodels.discrete.discrete_model import (
 from statsmodels.stats.multitest import multipletests
 
 
-FloatArray = npt.NDArray[np.float_]
+FloatArray = npt.NDArray[np.float64]
 
 def _ensure_float(value: Any) -> float:
     """Return a Python float converted from statsmodels/pandas scalar outputs."""

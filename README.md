@@ -135,12 +135,25 @@ python -m quant_text_analysis mnlr
 ```
 
 **出力ファイル:**
-- `outputs/{タイムスタンプ}/cluster/margeff.csv`
-- `outputs/{タイムスタンプ}/cluster/pairwise_method_tests.csv`
-- `outputs/{タイムスタンプ}/cluster/odds_ratio_year.png`
-- `outputs/{タイムスタンプ}/cluster/odds_ratio_methods.png`
-- `outputs/{タイムスタンプ}/gender/binlogit_results.csv`
-- `outputs/{タイムスタンプ}/gender/year_effect_prediction.png`
+- `CODE_MAP_CLUSTER`の分析結果
+  - `outputs/{タイムスタンプ}/cluster/margeff.csv` - 各クラスタコードの回帰係数・信頼区間・Odds Ratio
+  - `outputs/{タイムスタンプ}/cluster/binary_logit_summary_【コード名】.txt` - 各コードのロジット回帰要約
+  - `outputs/{タイムスタンプ}/cluster/pairwise_method_tests.csv` - 手法間ペアワイズ比較の検定結果
+  - `outputs/{タイムスタンプ}/cluster/odds_ratio_year.png` - 年の効果の図
+  - `outputs/{タイムスタンプ}/cluster/odds_ratio_methods.png` - 手法の効果の図
+  - `outputs/{タイムスタンプ}/cluster/token_counts.csv` - 各クラスタコードのトークン数サマリ
+- `CODE_MAP_GENDER`の分析結果
+  - `outputs/{タイムスタンプ}/gender/binlogit_summary.txt` - ジェンダーコード有無の回帰の要約
+  - `outputs/{タイムスタンプ}/gender/binlogit_results.csv` - ジェンダーコード有無の回帰の推定結果
+  - `outputs/{タイムスタンプ}/gender/pairwise_method_tests_binlogit.csv` - 手法間ペアワイズ比較の検定結果
+  - `outputs/{タイムスタンプ}/gender/odds_ratio_methods.png` - 手法の効果の図
+  - `outputs/{タイムスタンプ}/gender/year_effect_prediction.png` - 年の効果の予測プロット
+  - `outputs/{タイムスタンプ}/gender/female_vs_male_summary.txt` - 女性 vs 男性比較のロジット要約
+  - `outputs/{タイムスタンプ}/gender/female_vs_male_results.csv` - 女性 vs 男性比較の推定結果
+  - `outputs/{タイムスタンプ}/gender/pairwise_method_tests_female_vs_male.csv` - 女性 vs 男性比較のペアワイズ検定
+  - `outputs/{タイムスタンプ}/gender/female_vs_male_odds_ratio_methods.png` - 女性 vs 男性比較の手法差図
+  - `outputs/{タイムスタンプ}/gender/female_vs_male_year_effect_prediction.png` - 女性 vs 男性比較の年効果予測図
+  - `outputs/{タイムスタンプ}/gender/token_counts.csv` - ジェンダーコードのトークン数サマリ
 
 **特徴:**
 - 手法タグはセミコロン区切りの複数指定に対応し、`qual`/`quan`/`review`/`theoretic`

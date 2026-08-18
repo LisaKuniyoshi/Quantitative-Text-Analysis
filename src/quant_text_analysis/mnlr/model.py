@@ -175,6 +175,6 @@ def predict_probabilities(
     Returns:
         pandas.DataFrame: 観測を行方向、コードを列方向に持つ予測確率表。
     """
-    p: npt.NDArray[np.float_] = np.asarray(res.predict(df_pred), dtype=float)
+    p: npt.NDArray[np.float64] = np.asarray(res.predict(df_pred), dtype=float)
     cols: List[str] = list(cats)
     return pd.DataFrame(p, columns=cols, index=df_pred.index)
