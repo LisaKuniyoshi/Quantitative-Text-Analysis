@@ -6,7 +6,7 @@ from typing import Iterable, Sequence
 
 
 def period_group_year(y: int) -> list[str]:
-    """発行年から集計用の期間ラベルを生成する。
+    """発行年から集計用の期間ラベルを生成する。編集可。
 
     Args:
         y (int): 発行年。
@@ -28,6 +28,7 @@ def period_group_year(y: int) -> list[str]:
 
 
 METHOD_CODE_TO_LABEL: dict[str, str] = {
+    """研究手法カテゴリの Zotero タグと、その図表用ラベル。編集可。"""
     "qual": "質",
     "quan": "量",
     "review": "レ",

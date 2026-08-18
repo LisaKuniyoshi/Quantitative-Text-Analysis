@@ -31,7 +31,7 @@ from quant_text_analysis.mnlr import (
 )
 
 # 既存のコーディング規則を再利用
-from ..config import CODE_MAP_CLUSTER
+from ..config import CODE_MAP_CLUSTER, CODE_MAP_GENDER
 
 
 def main() -> None:
@@ -52,7 +52,7 @@ def main() -> None:
     )
 
     # (3) 文書ごとのコード出現（有無）
-    code_index = invert_code_map(CODE_MAP_CLUSTER)
+    code_index = invert_code_map(CODE_MAP_CLUSTER) # CODE_MAP_GENDER に編集可
     per_doc_codes = codes_per_doc(per_doc_tokens, code_index)
 
     # 手法カテゴリを日本語ラベルへ変換（該当なしは「その他」扱い）

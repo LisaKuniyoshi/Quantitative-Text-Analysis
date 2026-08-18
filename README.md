@@ -1,14 +1,14 @@
 # Quantitative Text Analysis
 
-論文要旨などの英語テキストコーパスに対して、定量的なテキスト分析を行うPythonパッケージです。
+論文要旨を英語テキストコーパスとし、定量的なテキスト分析を行うPythonパッケージです。
 
 ## 概要
 
-本プロジェクトは、以下の主要な分析機能を提供します：
+以下が主要な分析機能です：
 
-1. **頻出語分析** (`freq`) - 文書内相対頻度に基づく頻出語のランキング
-2. **フレーズ抽出** (`phrases`) - Gensim Phrasesを用いたbigram/trigramの候補抽出
-3. **単語クラスタリング** (`cluster`) - 文書×語頻度を SVD で次元削減し、球面 k-means で単語をクラスタリング
+1. **フレーズ抽出** (`phrases`) - Gensim Phrasesを用いたbigram/trigramの候補抽出
+2. **頻出語分析** (`freq`) - 文書内相対頻度に基づく頻出語のランキング
+3. **単語クラスタリング** (`cluster`) - 文書×語頻度を SVD で次元削減し、spherical k-means で単語をクラスタリング
 4. **コード×手法クロス集計** (`cross_table`) - 文書単位でコード出現有無を集計し、研究手法カテゴリと対比
 5. **ニ項ロジスティック回帰** (`mnlr`) - コード出現データをニ項ロジスティック回帰分析し、出版年および研究手法ごとの効果と手法間ペアワイズ差を評価
 
@@ -39,18 +39,32 @@ pip install -e .
 
 ## データの準備
 
-分析対象のデータは、以下のパスに配置してください：
+分析対象のデータは、以下のパスに配置してください（`settings.py`から編集可）：
 - デフォルトパス: `data/raw/エクスポートされたアイテム.csv`
 
-CSVファイルには以下の列が必要です (Zotero のエクスポート機能を想定)：
+サンプルデータは公開していませんが、メールで連絡いただければ提供します。
+
+CSVファイルには以下の列が必要です (Zotero のエクスポート機能を想定。出版年の区分やタグについては、`grouping.py`から編集可)：
 - `abstract`: 論文の要旨（英語テキスト）
 - `year`: 出版年。年代別集計では、デフォルトで 2014–2025 の範囲を 3 区分に分類する。
-- `manual_tags`: 手作業でのタグ付け。`qual`, `quan`, `theoretic`, `review`, `other`
-  をセミコロン区切りで記述し、複数タグを付した場合は各カテゴリに重複集計される。
+- `manual_tags`: 手作業でのタグ付け。セミコロン区切りで記述し、複数タグを付した場合は各カテゴリに重複集計される。デフォルトでは`qual`, `quan`, `theoretic`, `review`, `other`。
 
 ## 使用方法
 
-### 1. 頻出語分析 (freq)
+### 1. フレーズ抽出 (phrases)
+
+Gensim Phrasesを使用して、bigramとtrigramの候補を抽出します。
+
+```bash
+python -m quant_text_analysis phrases
+```
+
+**出力ファイル:**
+- `outputs/{タイムスタンプ}/phrases_gensim.csv` - 抽出されたフレーズ候補とスコア
+
+候補のうち登録するものは、`config.py`の`forced`や`forced_aliases`に追加してください。
+
+### 2. 頻出語分析 (freq)
 
 全体、年代別、研究手法別の頻出語ランキングを算出します。
 
@@ -63,12 +77,12 @@ python -m quant_text_analysis freq
 - `outputs/{タイムスタンプ}/top_words_period_{グループ名}.csv` - 年代別の頻出語
 - `outputs/{タイムスタンプ}/top_words_method_{グループ名}.csv` - 研究手法別の頻出語
 
-**年代グループ:**
+**年代グループ（`grouping.py`から編集可）:**
 - 2014–2021
 - 2022–2023
 - 2024–2025
 
-**研究手法グループ:**
+**研究手法グループ（`grouping.py`から編集可）:**
 - qual (質的研究)
 - quan (量的研究)
 - theoretic (理論研究)
@@ -77,25 +91,9 @@ python -m quant_text_analysis freq
 
 同一文書が複数の手法タグを持つ場合は、上記の各カテゴリに重複して集計されます。
 
-### 2. フレーズ抽出 (phrases)
-
-Gensim Phrasesを使用して、bigramとtrigramの候補を抽出します。
-
-```bash
-python -m quant_text_analysis phrases
-```
-
-**出力ファイル:**
-- `outputs/{タイムスタンプ}/phrases_gensim.csv` - 抽出されたフレーズ候補とスコア
-
-**特徴:**
-- 英米表記の統一（breameライブラリ使用）
-- 接続語を考慮したフレーズ学習
-- モデルスコアと実コーパスでの使用統計を結合
-
 ### 3. 単語クラスタリング (cluster)
 
-語×文書頻度行列から Truncated SVD で語埋め込みを生成し、L2 正規化後に球面 k-means でクラスタリングを実行します。
+語×文書頻度行列から Truncated SVD で語埋め込みを生成し、L2 正規化後にspherical k-means でクラスタリングを実行します。
 
 ```bash
 python -m quant_text_analysis cluster
@@ -110,14 +108,12 @@ python -m quant_text_analysis cluster
 - `outputs/{タイムスタンプ}/svd_dim_{次元}/abstract_ratio_k{K}.npy` - 文書×クラスタ比率行列
 
 **デフォルト設定:**
-- クラスタ数: k=16, 19, 21, 25, 28, 31, 34, 37
-- SVD次元数: 25（`svd_dim_list` で複数指定可）
-- k-meansの初期化回数: 20
-- 最大反復回数: 300
+- クラスタ数: 23（`config.py`の`k_list` で複数指定可）
+- SVD次元数: 25（`config.py`の`svd_dim_list` で複数指定可）
 
 ### 4. コード×手法クロス集計 (cross_table)
 
-文書内にコードが一度でも出現したかを基準に、コードと研究手法のクロス集計を生成します。
+`config.CODE_MAP_CLUSTER` に定義したコードブックに基づき、各コードが各手法の論文のうち何本に出現したかのクロス集計を生成します。
 
 ```bash
 python -m quant_text_analysis cross_table
@@ -127,9 +123,8 @@ python -m quant_text_analysis cross_table
 - `outputs/{タイムスタンプ}/code_method_crosstab_docs.csv` - コード×研究手法（文書数）のクロス表
 
 **特徴:**
-- `config.CODE_MAP_CLUSTER` に定義したコード集合を利用
+- `config.CODE_MAP_CLUSTER` に定義したコードブックを利用（`CODE_MAP_GENDER`に編集可）
 - トークン化は既存のキャッシュを再利用しつつ再計算
-- 手法ラベルは `grouping.method_group` の分類を適用
 
 ### 5. ニ項ロジスティック回帰と可視化 (mnlr)
 
@@ -251,12 +246,7 @@ Quantitative-Text-Analysis/
 
 同じデータで複数回実行する場合、キャッシュが活用され処理が高速化されます。
 
-## 貢献
-
-バグ報告や機能提案は、GitHubのIssuesページでお願いします。
-
 ## 注意事項
 
 - 初回実行時は、spaCyの言語モデルのダウンロードや処理に時間がかかる場合があります
 - 大規模なコーパスを処理する場合は、十分なメモリが必要です
-- 出力ディレクトリは実行時のタイムスタンプで自動生成されます
