@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import pandas as pd
+
+from quant_text_analysis.grouping import METHOD_CODE_TO_LABEL
+
+METHOD_CODE_ORDER: tuple[str, ...] = ("qual", "quan", "theoretic", "review", "other")
 
 
 def build_code_method_crosstab(
@@ -22,15 +26,16 @@ def build_code_method_crosstab(
     Returns:
         pandas.DataFrame: 行がコード、列が手法の 0/1 クロス集計。行名は `code`、列名は `method`。
     """
-    method_series = method.fillna("other").astype(str)
-
     rows = []
+    column_labels = [METHOD_CODE_TO_LABEL.get(code, code) for code in METHOD_CODE_ORDER]
     for doc_id, codes in enumerate(per_doc_codes):
-        for code in codes:
-            rows.append((doc_id, code, method_series.iloc[doc_id]))
+        method_codes = [*dict.fromkeys(code for code in method.iloc[doc_id])]
+        if not method_codes:
+            method_codes = ["other"]
+        for method_code in method_codes:
+            for code in codes:
+                rows.append((doc_id, code, method_code))
 
-    observed_methods = set(method_series.astype(str).tolist())
-    column_labels = sorted(observed_methods)
     code_labels = list(code_order)
 
     if rows:
@@ -45,6 +50,7 @@ def build_code_method_crosstab(
                 fill_value=0,
             )
         )
+        crosstab = crosstab.rename(columns=METHOD_CODE_TO_LABEL)
     else:
         crosstab = pd.DataFrame(columns=column_labels)
 

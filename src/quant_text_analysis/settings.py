@@ -9,7 +9,7 @@ from typing import Tuple
 from .config import default_columns, default_token_policy
 from .data_types import Columns, TokenPolicy
 
-# 既定パス（プロジェクトのレイアウトに依存）
+# 既定パス（プロジェクトのレイアウトに依存。編集可）
 PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
 DATA_DIR: Path = PROJECT_ROOT / "data"
 RAW_DIR: Path = DATA_DIR / "raw"
@@ -19,7 +19,7 @@ CSV_PATH: Path = RAW_DIR / "エクスポートされたアイテム.csv"
 
 @dataclass(frozen=True)
 class Settings:
-    """プロジェクト全体の設定値を保持する不変データクラス。
+    """プロジェクト全体の設定値を保持する不変データクラス。編集可
 
     Attributes:
         project_root (Path): プロジェクトルートディレクトリ。
